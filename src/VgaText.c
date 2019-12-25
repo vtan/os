@@ -16,13 +16,11 @@ void VgaText_scrollUp() {
     (uint8_t*) (VgaText_buffer + VgaText_WIDTH),
     sizeof(uint16_t) * (VgaText_PAGE_SIZE - VgaText_WIDTH)
   );
-  /*
-  memset(
-    (uint8_t*) (VgaText_buffer + (VgaText_PAGE_SIZE - VgaText_WIDTH)),
-    0,
-    sizeof(uint16_t) * VgaText_WIDTH
-  );
-  */
+
+  const uint16_t blank = ' ' | VgaText_color(VgaText_LIGHT_GREY, VgaText_BLACK) << 8;
+  for (size_t i = VgaText_PAGE_SIZE - VgaText_WIDTH; i < VgaText_PAGE_SIZE; ++i) {
+    VgaText_buffer[i] = blank;
+  }
 }
 
 void VgaText_moveCursor(size_t offset) {
