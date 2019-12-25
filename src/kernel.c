@@ -2,15 +2,8 @@
 #include <stddef.h>
 #include <stdint.h>
 
-/* Check if the compiler thinks you are targeting the wrong operating system. */
-#if defined(__linux__)
-#error "You are not using a cross-compiler, you will most certainly run into trouble"
-#endif
-
-/* This tutorial will only work for the 32-bit ix86 targets. */
-#if !defined(__i386__)
-#error "This tutorial needs to be compiled with a ix86-elf compiler"
-#endif
+#include "Keyboard.h"
+#include "Pic.h"
 
 /* Hardware text mode color constants. */
 enum vga_color {
@@ -106,13 +99,13 @@ void terminal_writestring(const char* data)
 
 void kernel_main(void)
 {
+	Pic_init();
+	Keyboard_init();
+
 	/* Initialize terminal interface */
 	terminal_initialize();
 
-	for (int j = 0; j < 25; ++j) {
-		terminal_setcolor(8 + j % 8);
-		for (int i = 0; i < 80; ++i) {
-			terminal_putchar('0' + i % 10);
-		}
+	while(1) {
+		__asm__("hlt");
 	}
 }

@@ -1,3 +1,5 @@
+.intel_syntax noprefix
+
 /* Declare constants for the multiboot header. */
 .set ALIGN,    1<<0             /* align loaded modules on page boundaries */
 .set MEMINFO,  1<<1             /* provide memory map */
@@ -17,6 +19,21 @@ forced to be within the first 8 KiB of the kernel file.
 .long MAGIC
 .long FLAGS
 .long CHECKSUM
+
+.section .data
+Gdt_table:
+  # Null descriptor
+  .word 0, 0, 0, 0
+  # Code segment descriptor
+  .word 0xffff, 0x0000
+  .byte 0x00, 0x9a, 0xcf, 0x00
+  # Data segment descriptor
+  .word 0xffff, 0x0000
+  .byte 0x00, 0x92, 0xcf, 0x00
+
+Gdt_pointer:
+  .word 24
+  .int offset Gdt_table
 
 /*
 The multiboot standard does not define the value of the stack pointer register
@@ -63,7 +80,7 @@ _start:
   stack (as it grows downwards on x86 systems). This is necessarily done
   in assembly as languages such as C cannot function without a stack.
   */
-  mov $stack_top, %esp
+  mov esp, offset stack_top
 
   /*
   This is a good place to initialize crucial processor state before the
@@ -75,6 +92,10 @@ _start:
   C++ features such as global constructors and exceptions will require
   runtime support to work as well.
   */
+  call Gdt_load
+  call Idt_init
+  call Idt_load
+  sti
 
   /*
   Enter the high-level kernel. The ABI requires the stack is 16-byte
@@ -102,6 +123,38 @@ _start:
 halt_loop:
   hlt
   jmp halt_loop
+
+Gdt_load:
+  lgdt [Gdt_pointer]
+  jmp 0x08:Gdt_loadRegisters
+Gdt_loadRegisters:
+  mov ax, 0x10
+  mov ds, ax
+  mov es, ax
+  mov fs, ax
+  mov gs, ax
+  mov ss, ax
+  ret
+
+.global interrupt_handler
+interrupt_handler:
+  pushad
+  cld
+  # call Keyboard_handler
+  popad
+  iretd
+
+.global Keyboard_interrupt
+Keyboard_interrupt:
+  pushad
+  cld
+  call Keyboard_handler
+  popad
+  iretd
+
+Idt_load:
+  lidt [Idt_pointer]
+  ret
 
 /*
 Set the size of the _start symbol to the current location '.' minus its start.

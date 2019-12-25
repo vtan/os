@@ -7,7 +7,7 @@ LDFLAGS := -ffreestanding
 LDLIBS := -nostdlib -lgcc
 
 KERNEL_BIN := kernel.bin
-OBJS := src/boot.o src/kernel.o
+OBJS := src/boot.o src/kernel.o src/Idt.o src/Keyboard.o src/Pic.o src/Port.o
 
 all: $(KERNEL_BIN)
 
