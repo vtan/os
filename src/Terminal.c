@@ -31,6 +31,12 @@ void Terminal_print(const char* str) {
       VgaText_put(Terminal_state.offset, Terminal_state.attributes, *str);
       ++Terminal_state.offset;
     }
+
+    if (Terminal_state.offset >= VgaText_PAGE_SIZE) {
+      VgaText_scrollUp();
+      Terminal_state.offset -= VgaText_WIDTH;
+    }
+
     ++str;
   }
   VgaText_moveCursor(Terminal_state.offset);

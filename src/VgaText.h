@@ -27,6 +27,7 @@ enum VgaText_Color {
 };
 
 void VgaText_put(size_t offset, uint8_t attributes, uint8_t character);
+void VgaText_scrollUp();
 void VgaText_moveCursor(size_t offset);
 
 uint8_t VgaText_color(enum VgaText_Color foreground, enum VgaText_Color background);
