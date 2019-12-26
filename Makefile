@@ -7,6 +7,7 @@ LDFLAGS := -ffreestanding
 LDLIBS := -nostdlib -lgcc
 
 KERNEL_BIN := kernel.bin
+ISO := os.iso
 OBJS := src/boot.o src/kernel.o src/string.o src/Idt.o src/Keyboard.o src/Pic.o src/Port.o src/Terminal.o src/VgaText.o
 
 all: $(KERNEL_BIN)
@@ -15,7 +16,13 @@ $(KERNEL_BIN): src/linker.ld  $(OBJS)
 	$(CC) -T $< -o $@ $(LDFLAGS) $(LDLIBS) $(OBJS)
 
 clean:
-	rm -f $(KERNEL_BIN) $(OBJS)
+	rm -rf iso $(ISO) $(KERNEL_BIN) $(OBJS)
 
-run: $(KERNEL_BIN)
-	qemu-system-x86_64 -no-reboot -kernel $<
+$(ISO): $(KERNEL_BIN) grub.cfg
+	mkdir -p iso/boot/grub
+	cp grub.cfg iso/boot/grub/grub.cfg
+	cp $(KERNEL_BIN) iso/boot/$(KERNEL_BIN)
+	grub-mkrescue -o $(ISO) iso
+
+run: $(ISO)
+	qemu-system-x86_64 -no-reboot -cdrom $(ISO)

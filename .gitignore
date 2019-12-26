@@ -1,2 +1,4 @@
 *.o
 kernel.bin
+os.iso
+iso/
