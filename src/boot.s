@@ -43,6 +43,10 @@ gdt_pointer:
   .2byte (. - gdt - 1)             # Limit.
   .8byte offset gdt                     # Base.
 
+idt_pointer:
+  .2byte (256 * 16 - 1) # 256 IDT entries
+  .8byte offset idt
+
 .section .bss
 
 .align 16
@@ -108,40 +112,28 @@ _start64:
   mov gs, ax
   mov ss, ax
 
-  mov rax, 0x2f592f412f4b2f4f
-  mov qword [0xb8000], rax
+  mov rsp, offset stack_top
 
-  # mov esp, offset stack_top
+  call Idt_init
+  lidt [idt_pointer]
+  sti
 
-  # call Idt_init
-  # call Idt_load
-  # sti
-
-  # call kernel_main
+  call kernel_main
 
   cli
 halt:
   hlt
   jmp halt
 
-/*
 .global interrupt_handler
 interrupt_handler:
-  pushad
+  # TODO save registers!
   cld
-  # call Keyboard_handler
-  popad
-  iretd
+  iretq
 
 .global Keyboard_interrupt
 Keyboard_interrupt:
-  pushad
+  # TODO save registers!
   cld
   call Keyboard_handler
-  popad
-  iretd
-
-Idt_load:
-  lidt [Idt_pointer]
-  ret
-*/
+  iretq

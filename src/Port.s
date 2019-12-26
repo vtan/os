@@ -3,13 +3,13 @@
 .section .text
 .global Port_in
 Port_in:
-  mov dx, [esp + 4]
+  mov dx, di
   in al, dx
   ret
 
 .global Port_out
 Port_out:
-  mov dx, [esp + 4]
-  mov al, [esp + 4 + 4]
+  mov dx, di
+  mov al, sil
   out dx, al
   ret

@@ -8,7 +8,7 @@ LDLIBS := -nostdlib -lgcc
 
 KERNEL_BIN := kernel.bin
 ISO := os.iso
-OBJS := src/boot.o # src/kernel.o src/string.o src/Idt.o src/Keyboard.o src/Pic.o src/Port.o src/Terminal.o src/VgaText.o
+OBJS := src/boot.o src/kernel.o src/string.o src/Idt.o src/Keyboard.o src/Pic.o src/Port.o src/Terminal.o src/VgaText.o
 
 all: $(KERNEL_BIN)
 
