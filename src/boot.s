@@ -52,6 +52,9 @@ undefined behavior.
 stack_bottom:
 .skip 16384 # 16 KiB
 stack_top:
+.align 4096
+page_directory:
+.skip 4096
 
 /*
 The linker script specifies _start as the entry point to the kernel and the
@@ -74,6 +77,20 @@ _start:
   itself. It has absolute and complete power over the
   machine.
   */
+  mov dword ptr [page_directory], 0x00000083 # Large identity page
+  mov dword ptr [page_directory + 4 * 896], 0x00000083 # Map 3.5G+4M to kernel
+  mov eax, offset page_directory
+  mov cr3, eax
+
+  # Enable PSE (4MB pages)
+  mov eax, cr4
+  or eax, 0x10
+  mov cr4, eax
+
+  # Enable paging and write protection
+  mov eax, cr0
+  or eax, 0x80000000
+  mov cr0, eax
 
   /*
   To set up a stack, we set the esp register to point to the top of the

@@ -18,4 +18,4 @@ clean:
 	rm -f $(KERNEL_BIN) $(OBJS)
 
 run: $(KERNEL_BIN)
-	qemu-system-x86_64 -kernel $<
+	qemu-system-x86_64 -no-reboot -kernel $<
