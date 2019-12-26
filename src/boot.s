@@ -1,158 +1,130 @@
 .intel_syntax noprefix
 
-/* Declare constants for the multiboot header. */
-.set ALIGN,    1<<0             /* align loaded modules on page boundaries */
-.set MEMINFO,  1<<1             /* provide memory map */
-.set FLAGS,    ALIGN | MEMINFO  /* this is the Multiboot 'flag' field */
-.set MAGIC,    0x1BADB002       /* 'magic number' lets bootloader find the header */
-.set CHECKSUM, -(MAGIC + FLAGS) /* checksum of above, to prove we are multiboot */
-
-/*
-Declare a multiboot header that marks the program as a kernel. These are magic
-values that are documented in the multiboot standard. The bootloader will
-search for this signature in the first 8 KiB of the kernel file, aligned at a
-32-bit boundary. The signature is in its own section so the header can be
-forced to be within the first 8 KiB of the kernel file.
-*/
 .section .multiboot
+
 .align 4
-.long MAGIC
-.long FLAGS
-.long CHECKSUM
+.4byte 0xe85250d6                # magic number (multiboot 2)
+.4byte 0                         # architecture 0 (protected mode i386)
+.4byte 96                        # header length
+# checksum
+.4byte 0x100000000 - (0xe85250d6 + 0 + 96)
+.2byte 0    # type
+.2byte 0    # flags
+.4byte 8    # size
 
 .section .data
-Gdt_table:
-  # Null descriptor
-  .word 0, 0, 0, 0
-  # Code segment descriptor
-  .word 0xffff, 0x0000
-  .byte 0x00, 0x9a, 0xcf, 0x00
-  # Data segment descriptor
-  .word 0xffff, 0x0000
-  .byte 0x00, 0x92, 0xcf, 0x00
 
-Gdt_pointer:
-  .word 24
-  .int offset Gdt_table
+gdt:
+  gdt_null_segment = . - gdt
+  .2byte 0xFFFF                    # Limit (low).
+  .2byte 0                         # Base (low).
+  .byte 0                         # Base (middle)
+  .byte 0                         # Access.
+  .byte 1                         # Granularity.
+  .byte 0                         # Base (high).
 
-/*
-The multiboot standard does not define the value of the stack pointer register
-(esp) and it is up to the kernel to provide a stack. This allocates room for a
-small stack by creating a symbol at the bottom of it, then allocating 16384
-bytes for it, and finally creating a symbol at the top. The stack grows
-downwards on x86. The stack is in its own section so it can be marked nobits,
-which means the kernel file is smaller because it does not contain an
-uninitialized stack. The stack on x86 must be 16-byte aligned according to the
-System V ABI standard and de-facto extensions. The compiler will assume the
-stack is properly aligned and failure to align the stack will result in
-undefined behavior.
-*/
+  gdt_code_segment = . - gdt
+  .2byte 0                         # Limit (low).
+  .2byte 0                         # Base (low).
+  .byte 0                         # Base (middle)
+  .byte 0b10011010                 # Access (exec/read).
+  .byte 0b10101111                 # Granularity, 64 bits flag, limit19:16.
+  .byte 0                         # Base (high).
+
+  gdt_data_segment = . - gdt
+  .2byte 0                         # Limit (low).
+  .2byte 0                         # Base (low).
+  .byte 0                         # Base (middle)
+  .byte 0b10010010                 # Access (read/write).
+  .byte 0b00000000                 # Granularity.
+  .byte 0                         # Base (high).
+
+gdt_pointer:
+  .2byte (. - gdt - 1)             # Limit.
+  .8byte offset gdt                     # Base.
+
 .section .bss
+
 .align 16
 stack_bottom:
-.skip 16384 # 16 KiB
+  .skip 16384 # 16 KiB
 stack_top:
-.align 4096
-page_directory:
-.skip 4096
 
-/*
-The linker script specifies _start as the entry point to the kernel and the
-bootloader will jump to this position once the kernel has been loaded. It
-doesn't make sense to return from this function as the bootloader is gone.
-*/
+.align 4096
+page_map_l4_table:
+  .skip 4096
+page_dictionary_pointer_table:
+  .skip 4096
+page_directory_table:
+  .skip 4096
+page_table:
+  .skip 4096
+
 .section .text
+
+.code32
 .global _start
 .type _start, @function
 _start:
-  /*
-  The bootloader has loaded us into 32-bit protected mode on a x86
-  machine. Interrupts are disabled. Paging is disabled. The processor
-  state is as defined in the multiboot standard. The kernel has full
-  control of the CPU. The kernel can only make use of hardware features
-  and any code it provides as part of itself. There's no printf
-  function, unless the kernel provides its own <stdio.h> header and a
-  printf implementation. There are no security restrictions, no
-  safeguards, no debugging mechanisms, only what the kernel provides
-  itself. It has absolute and complete power over the
-  machine.
-  */
-  mov dword ptr [page_directory], 0x00000083 # Large identity page
-  mov dword ptr [page_directory + 4 * 896], 0x00000083 # Map 3.5G+4M to kernel
-  mov eax, offset page_directory
-  mov cr3, eax
+  mov eax, offset page_dictionary_pointer_table
+  or eax, 0x03
+  mov dword ptr [page_map_l4_table], eax
 
-  # Enable PSE (4MB pages)
+  mov eax, offset page_directory_table
+  or eax, 0x03
+  mov dword ptr [page_dictionary_pointer_table], eax
+
+  mov dword ptr [page_directory_table], 0x83 # 2MB identity page
+
+  mov edi, offset page_map_l4_table
+  mov cr3, edi
+
+  # Enable PAE and PSE
   mov eax, cr4
-  or eax, 0x10
+  or eax, 0b00110000
   mov cr4, eax
+
+  mov ecx, 0xC0000080          # Set the C-register to 0xC0000080, which is the EFER MSR.
+  rdmsr                        # Read from the model-specific register.
+  or eax, 0x100                # Set the LM-bit which is the 9th bit (bit 8).
+  wrmsr                        # Write to the model-specific register.
 
   # Enable paging and write protection
   mov eax, cr0
-  or eax, 0x80000000
+  or eax, 1 << 31 | 1 << 16
   mov cr0, eax
 
-  /*
-  To set up a stack, we set the esp register to point to the top of the
-  stack (as it grows downwards on x86 systems). This is necessarily done
-  in assembly as languages such as C cannot function without a stack.
-  */
-  mov esp, offset stack_top
+  lgdt [gdt_pointer]
+  jmp gdt_code_segment:_start64
 
-  /*
-  This is a good place to initialize crucial processor state before the
-  high-level kernel is entered. It's best to minimize the early
-  environment where crucial features are offline. Note that the
-  processor is not fully initialized yet: Features such as floating
-  point instructions and instruction set extensions are not initialized
-  yet. The GDT should be loaded here. Paging should be enabled here.
-  C++ features such as global constructors and exceptions will require
-  runtime support to work as well.
-  */
-  call Gdt_load
-  call Idt_init
-  call Idt_load
-  sti
-
-  /*
-  Enter the high-level kernel. The ABI requires the stack is 16-byte
-  aligned at the time of the call instruction (which afterwards pushes
-  the return pointer of size 4 bytes). The stack was originally 16-byte
-  aligned above and we've pushed a multiple of 16 bytes to the
-  stack since (pushed 0 bytes so far), so the alignment has thus been
-  preserved and the call is well defined.
-  */
-  call kernel_main
-
-  /*
-  If the system has nothing more to do, put the computer into an
-  infinite loop. To do that:
-  1) Disable interrupts with cli (clear interrupt enable in eflags).
-     They are already disabled by the bootloader, so this is not needed.
-     Mind that you might later enable interrupts and return from
-     kernel_main (which is sort of nonsensical to do).
-  2) Wait for the next interrupt to arrive with hlt (halt instruction).
-     Since they are disabled, this will lock up the computer.
-  3) Jump to the hlt instruction if it ever wakes up due to a
-     non-maskable interrupt occurring or due to system management mode.
-  */
-  cli
-halt_loop:
-  hlt
-  jmp halt_loop
-
-Gdt_load:
-  lgdt [Gdt_pointer]
-  jmp 0x08:Gdt_loadRegisters
-Gdt_loadRegisters:
-  mov ax, 0x10
+.code64
+.global _start64
+.type _start64, @function
+_start64:
+  mov ax, gdt_data_segment
   mov ds, ax
   mov es, ax
   mov fs, ax
   mov gs, ax
   mov ss, ax
-  ret
 
+  mov rax, 0x2f592f412f4b2f4f
+  mov qword [0xb8000], rax
+
+  # mov esp, offset stack_top
+
+  # call Idt_init
+  # call Idt_load
+  # sti
+
+  # call kernel_main
+
+  cli
+halt:
+  hlt
+  jmp halt
+
+/*
 .global interrupt_handler
 interrupt_handler:
   pushad
@@ -172,9 +144,4 @@ Keyboard_interrupt:
 Idt_load:
   lidt [Idt_pointer]
   ret
-
-/*
-Set the size of the _start symbol to the current location '.' minus its start.
-This is useful when debugging or when you implement call tracing.
 */
-.size _start, . - _start
