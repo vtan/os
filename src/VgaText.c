@@ -1,8 +1,9 @@
 #include "Port.h"
 #include "VgaText.h"
+#include "kernel.h"
 #include "string.h"
 
-uint16_t* VgaText_buffer = (uint16_t*) 0xB8000;
+uint16_t* VgaText_buffer = (uint16_t*) (KERNEL_MEMORY_OFFSET + 0xB8000);
 
 void VgaText_init() {
   const uint8_t cursorStartRegister = 0xA;

@@ -1,5 +1,7 @@
 .intel_syntax noprefix
 
+.set KERNEL_MEMORY_OFFSET, 0xFFFFFF8000000000
+
 .section .multiboot
 
 .align 4
@@ -55,13 +57,13 @@ stack_bottom:
 stack_top:
 
 .align 4096
-page_map_l4_table:
+page_table_l4:
   .skip 4096
-page_dictionary_pointer_table:
+page_table_l3:
   .skip 4096
-page_directory_table:
+page_table_l2:
   .skip 4096
-page_table:
+page_table_l1:
   .skip 4096
 
 .section .text
@@ -70,17 +72,27 @@ page_table:
 .global _start
 .type _start, @function
 _start:
-  mov eax, offset page_dictionary_pointer_table
+  # The kernel will live at 0+2MB in the physical address space
+  # and at 0xFFFFFF8000000000+2MB in the virtual address space.
+  # We set up two virtual address ranges in the page table hierarchy
+  # pointing to this physical range:
+  # - L4 entry 511, mapping the virtual space to the physical,
+  # - L4 entry 0, mapping the physical space to itself temporarily,
+  #   so we don't get a page fault while we're executing code here.
+  # Both entries point to L3[0], which points to L2[0], which is a large (2MB) page itself.
+
+  mov eax, offset (page_table_l3 - KERNEL_MEMORY_OFFSET)
   or eax, 0x03
-  mov dword ptr [page_map_l4_table], eax
+  mov dword ptr [page_table_l4 - KERNEL_MEMORY_OFFSET], eax           # Link to L3 from 0 for identity page
+  mov dword ptr [page_table_l4 - KERNEL_MEMORY_OFFSET + 8 * 511], eax # Link to L3 from FFFFFF8000000000
 
-  mov eax, offset page_directory_table
+  mov eax, offset (page_table_l2 - KERNEL_MEMORY_OFFSET)
   or eax, 0x03
-  mov dword ptr [page_dictionary_pointer_table], eax
+  mov dword ptr [page_table_l3 - KERNEL_MEMORY_OFFSET], eax
 
-  mov dword ptr [page_directory_table], 0x83 # 2MB identity page
+  mov dword ptr [page_table_l2 - KERNEL_MEMORY_OFFSET], 0x83 # 2MB page
 
-  mov edi, offset page_map_l4_table
+  mov edi, offset (page_table_l4 - KERNEL_MEMORY_OFFSET)
   mov cr3, edi
 
   # Enable PAE and PSE
@@ -98,10 +110,20 @@ _start:
   or eax, 1 << 31 | 1 << 16
   mov cr0, eax
 
-  lgdt [gdt_pointer]
-  jmp gdt_code_segment:_start64
+  # Using physical address of GDTR because we're still in 32-bit mode.
+  # We'll need to switch to the 64-bit virtual address before disabling the identity page.
+  lgdt [gdt_pointer - KERNEL_MEMORY_OFFSET]
+  jmp gdt_code_segment:(_start64_physical - KERNEL_MEMORY_OFFSET)
 
 .code64
+.global _start64_physical
+.type _start64_physical, @function
+_start64_physical:
+  # We're still executing code from the physical address range,
+  # let's jump to the virtual address.
+  movabs rax, offset _start64
+  jmp rax
+
 .global _start64
 .type _start64, @function
 _start64:
@@ -112,10 +134,19 @@ _start64:
   mov gs, ax
   mov ss, ax
 
-  mov rsp, offset stack_top
+  # Disable identity page, flush TLB
+  mov qword ptr [page_table_l4 - KERNEL_MEMORY_OFFSET], 0
+  mov rax, cr3
+  mov cr3, rax
+
+  movabs rsp, offset stack_top
+
+  movabs rax, offset gdt_pointer
+  lgdt [rax]
 
   call Idt_init
-  lidt [idt_pointer]
+  movabs rax, offset idt_pointer
+  lidt [rax]
   sti
 
   call kernel_main

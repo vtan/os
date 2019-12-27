@@ -24,5 +24,7 @@ $(ISO): $(KERNEL_BIN) grub.cfg
 	cp $(KERNEL_BIN) iso/boot/$(KERNEL_BIN)
 	grub-mkrescue -o $(ISO) iso 2> /dev/null
 
+QEMU_ARGS := $(QEMU_ARGS) -no-reboot -cdrom $(ISO)
+
 run: $(ISO)
-	qemu-system-x86_64 -no-reboot -cdrom $(ISO)
+	qemu-system-x86_64 $(QEMU_ARGS)
