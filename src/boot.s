@@ -45,10 +45,6 @@ gdt_pointer:
   .2byte (. - gdt - 1)             # Limit.
   .8byte offset gdt                     # Base.
 
-idt_pointer:
-  .2byte (256 * 16 - 1) # 256 IDT entries
-  .8byte offset idt
-
 .section .bss
 
 .align 16
@@ -144,7 +140,7 @@ _start64:
   movabs rax, offset gdt_pointer
   lgdt [rax]
 
-  call Idt_init
+  call idt_fill
   movabs rax, offset idt_pointer
   lidt [rax]
   sti
@@ -155,16 +151,3 @@ _start64:
 halt:
   hlt
   jmp halt
-
-.global interrupt_handler
-interrupt_handler:
-  # TODO save registers!
-  cld
-  iretq
-
-.global Keyboard_interrupt
-Keyboard_interrupt:
-  # TODO save registers!
-  cld
-  call Keyboard_handler
-  iretq
