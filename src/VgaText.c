@@ -4,6 +4,22 @@
 
 uint16_t* VgaText_buffer = (uint16_t*) 0xB8000;
 
+void VgaText_init() {
+  const uint8_t cursorStartRegister = 0xA;
+  const uint8_t cursorEndRegister = 0xB;
+  const uint8_t scanlineStart = 0xA;
+  const uint8_t scanlineEnd = 0xF;
+
+  // Enable cursor
+  Port_out(0x3D4, cursorStartRegister);
+  const uint8_t startLine = (Port_in(0x3D5) & 0xC0) | scanlineStart;
+  Port_out(0x3D5, startLine);
+
+  Port_out(0x3D4, cursorEndRegister);
+  const uint8_t endLine = (Port_in(0x3D5) & 0xE0) | scanlineEnd;
+  Port_out(0x3D5, endLine);
+}
+
 void VgaText_put(size_t offset, uint8_t attributes, uint8_t character) {
   if (offset < VgaText_PAGE_SIZE) {
     VgaText_buffer[offset] = (uint16_t) character | (uint16_t) attributes << 8;

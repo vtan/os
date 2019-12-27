@@ -5,9 +5,11 @@
 #include "Keyboard.h"
 #include "Pic.h"
 #include "Terminal.h"
+#include "VgaText.h"
 
 void kernel_main(void)
 {
+	VgaText_init();
 	Terminal_init();
 	Pic_init();
 	Keyboard_init();
