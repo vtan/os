@@ -8,6 +8,7 @@ ENTRY(_start)
 SECTIONS
 {
 	. = KERNEL_MEMORY_OFFSET + 1M;
+	_kernel_start = .;
 
 	/* First put the multiboot header, as it is required to be put very early
 	   early in the image or the bootloader won't recognize the file format.
@@ -36,6 +37,7 @@ SECTIONS
 		*(COMMON)
 		*(.bss)
 	}
+	_kernel_end = .;
 
 	/* The compiler may produce other sections, by default it will put them in
 	   a segment with the same name. Simply add stuff here as needed. */

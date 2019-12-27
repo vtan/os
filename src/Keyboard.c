@@ -37,7 +37,7 @@ struct Keyboard_State {
   int ignoreBytes;
 };
 
-struct Keyboard_State state = {
+static struct Keyboard_State state = {
   .modifiers = 0,
   .ignoreBytes = 0
 };
