@@ -15,6 +15,8 @@ APPS := apps/first.elf
 
 all: $(KERNEL_BIN)
 
+iso: $(ISO)
+
 $(KERNEL_BIN): kernel/linker.ld  $(OBJS)
 	$(CC) -T $< -o $@ $(LDFLAGS) $(LDLIBS) $(OBJS)
 
@@ -24,10 +26,11 @@ apps/%.elf: apps/%.o
 clean:
 	rm -rf iso $(ISO) $(KERNEL_BIN) $(OBJS) $(APPS)
 
-$(ISO): $(KERNEL_BIN) grub.cfg
+$(ISO): $(KERNEL_BIN) $(APPS) grub.cfg
 	mkdir -p iso/boot/grub
 	cp grub.cfg iso/boot/grub/grub.cfg
 	cp $(KERNEL_BIN) iso/boot/$(KERNEL_BIN)
+	cp apps/first.elf iso/boot/initrd
 	grub-mkrescue -o $(ISO) iso 2> /dev/null
 
 QEMU_ARGS := $(QEMU_ARGS) -no-reboot -cdrom $(ISO)

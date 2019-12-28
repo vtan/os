@@ -145,6 +145,11 @@ _start64:
   lidt [rax]
   sti
 
+  # The boot loader put the pointer to the multiboot2 information structure
+  # to rbx and we haven't changed it.
+  mov rdi, KERNEL_MEMORY_OFFSET
+  add rdi, rbx
+
   call kernel_main
 
   cli
