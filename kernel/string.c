@@ -1,11 +1,14 @@
+#include <stdarg.h>
+
+#include "kernel.h"
 #include "string.h"
 
 const char* const digits = "0123456789ABCDEF";
 
-void String_uformat(uint64_t number, char* str, const int radix) {
+char* String_uformat(uint64_t number, char* str, const int radix) {
   if (radix < 0 || radix > 16) {
     str[0] = 0;
-    return;
+    return 0;
   }
 
   char* p = str;
@@ -16,7 +19,8 @@ void String_uformat(uint64_t number, char* str, const int radix) {
     number = next;
   } while (number > 0);
 
-  *(p--) = 0;
+  char* end = p--;
+  *end = 0;
 
   while (str < p) {
     char tmp = *str;
@@ -25,6 +29,40 @@ void String_uformat(uint64_t number, char* str, const int radix) {
     ++str;
     --p;
   }
+
+  return end;
+}
+
+void String_printf(char* output, const char* format, ...) {
+  va_list args;
+  va_start(args, format);
+  String_vprintf(output, format, args);
+  va_end(args);
+}
+
+void String_vprintf(char* output, const char* format, va_list args) {
+  bool percentMode = false;
+  while (*format != 0) {
+    if (percentMode) {
+      switch (*format) {
+      case 'd':
+        output = String_uformat(va_arg(args, uint64_t), output, 10);
+        break;
+      case 'x':
+        output = String_uformat(va_arg(args, uint64_t), output, 16);
+        break;
+      default:
+        *output++ = *format;
+      }
+      percentMode = false;
+    } else if (*format == '%') {
+      percentMode = true;
+    } else {
+      *output++ = *format;
+    }
+    ++format;
+  }
+  *output = 0;
 }
 
 void memset(uint8_t* dest, uint8_t byte, size_t count) {

@@ -1,3 +1,5 @@
+#pragma once
+
 #define Pic_MASTER_COMMAND 0x20
 #define Pic_MASTER_DATA    0x21
 #define Pic_SLAVE_COMMAND  0xA0

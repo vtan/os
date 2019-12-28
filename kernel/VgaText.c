@@ -1,6 +1,7 @@
+#include "kernel.h"
+
 #include "Port.h"
 #include "VgaText.h"
-#include "kernel.h"
 #include "string.h"
 
 static uint16_t* VgaText_buffer = (uint16_t*) (KERNEL_MEMORY_OFFSET + 0xB8000);
