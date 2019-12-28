@@ -8,15 +8,21 @@ LDLIBS := -nostdlib -lgcc
 
 KERNEL_BIN := kernel.bin
 ISO := os.iso
-OBJS := src/boot.o src/kernel.o src/string.o src/Interrupt.o src/Interrupt_asm.o src/Keyboard.o src/Pic.o src/Port.o src/Terminal.o src/VgaText.o
+OBJS := kernel/boot.o kernel/kernel.o kernel/string.o kernel/Interrupt.o kernel/Interrupt_asm.o \
+	kernel/Keyboard.o kernel/Pic.o kernel/Port.o kernel/Terminal.o kernel/VgaText.o
+
+APPS := apps/first.elf
 
 all: $(KERNEL_BIN)
 
-$(KERNEL_BIN): src/linker.ld  $(OBJS)
+$(KERNEL_BIN): kernel/linker.ld  $(OBJS)
 	$(CC) -T $< -o $@ $(LDFLAGS) $(LDLIBS) $(OBJS)
 
+apps/%.elf: apps/%.o
+	$(CC) -o $@ $(LDFLAGS) $(LDLIBS) $<
+
 clean:
-	rm -rf iso $(ISO) $(KERNEL_BIN) $(OBJS)
+	rm -rf iso $(ISO) $(KERNEL_BIN) $(OBJS) $(APPS)
 
 $(ISO): $(KERNEL_BIN) grub.cfg
 	mkdir -p iso/boot/grub
