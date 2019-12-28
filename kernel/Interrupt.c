@@ -1,6 +1,7 @@
 #include "kernel.h"
 
 #include "Keyboard.h"
+#include "Terminal.h"
 #include "VgaText.h"
 
 void Interrupt_genericExceptionHandler(struct Kernel_InterruptStack* stack) {

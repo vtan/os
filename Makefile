@@ -9,7 +9,8 @@ LDLIBS := -nostdlib -lgcc
 KERNEL_BIN := kernel.bin
 ISO := os.iso
 OBJS := kernel/boot.o kernel/kernel.o kernel/string.o kernel/Interrupt.o kernel/Interrupt_asm.o \
-	kernel/Keyboard.o kernel/Pic.o kernel/Port.o kernel/Terminal.o kernel/VgaText.o
+	kernel/Keyboard.o kernel/PageAlloc.o kernel/PageDirectory.o kernel/PageDirectory_asm.o \
+	kernel/Pic.o kernel/Port.o kernel/Program.o kernel/Terminal.o kernel/VgaText.o
 
 APPS := apps/first.elf
 

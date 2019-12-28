@@ -53,13 +53,15 @@ stack_bottom:
 stack_top:
 
 .align 4096
-page_table_l4:
+.global kernel_page_table_l4
+kernel_page_table_l4:
   .skip 4096
-page_table_l3:
+.global kernel_page_table_l3
+kernel_page_table_l3:
   .skip 4096
-page_table_l2:
+kernel_page_table_l2:
   .skip 4096
-page_table_l1:
+kernel_page_table_l1:
   .skip 4096
 
 .section .text
@@ -77,18 +79,18 @@ _start:
   #   so we don't get a page fault while we're executing code here.
   # Both entries point to L3[0], which points to L2[0], which is a large (2MB) page itself.
 
-  mov eax, offset (page_table_l3 - KERNEL_MEMORY_OFFSET)
+  mov eax, offset (kernel_page_table_l3 - KERNEL_MEMORY_OFFSET)
   or eax, 0x03
-  mov dword ptr [page_table_l4 - KERNEL_MEMORY_OFFSET], eax           # Link to L3 from 0 for identity page
-  mov dword ptr [page_table_l4 - KERNEL_MEMORY_OFFSET + 8 * 511], eax # Link to L3 from FFFFFF8000000000
+  mov dword ptr [kernel_page_table_l4 - KERNEL_MEMORY_OFFSET], eax           # Link to L3 from 0 for identity page
+  mov dword ptr [kernel_page_table_l4 - KERNEL_MEMORY_OFFSET + 8 * 511], eax # Link to L3 from FFFFFF8000000000
 
-  mov eax, offset (page_table_l2 - KERNEL_MEMORY_OFFSET)
+  mov eax, offset (kernel_page_table_l2 - KERNEL_MEMORY_OFFSET)
   or eax, 0x03
-  mov dword ptr [page_table_l3 - KERNEL_MEMORY_OFFSET], eax
+  mov dword ptr [kernel_page_table_l3 - KERNEL_MEMORY_OFFSET], eax
 
-  mov dword ptr [page_table_l2 - KERNEL_MEMORY_OFFSET], 0x83 # 2MB page
+  mov dword ptr [kernel_page_table_l2 - KERNEL_MEMORY_OFFSET], 0x83 # 2MB page
 
-  mov edi, offset (page_table_l4 - KERNEL_MEMORY_OFFSET)
+  mov edi, offset (kernel_page_table_l4 - KERNEL_MEMORY_OFFSET)
   mov cr3, edi
 
   # Enable PAE and PSE
@@ -101,9 +103,9 @@ _start:
   or eax, 0x100                # Set the LM-bit which is the 9th bit (bit 8).
   wrmsr                        # Write to the model-specific register.
 
-  # Enable paging and write protection
+  # Enable paging
   mov eax, cr0
-  or eax, 1 << 31 | 1 << 16
+  or eax, 1 << 31
   mov cr0, eax
 
   # Using physical address of GDTR because we're still in 32-bit mode.
@@ -131,7 +133,7 @@ _start64:
   mov ss, ax
 
   # Disable identity page, flush TLB
-  mov qword ptr [page_table_l4 - KERNEL_MEMORY_OFFSET], 0
+  mov qword ptr [kernel_page_table_l4 - KERNEL_MEMORY_OFFSET], 0
   mov rax, cr3
   mov cr3, rax
 

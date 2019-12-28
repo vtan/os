@@ -1,9 +1,13 @@
 #include "kernel.h"
 
 #include "Keyboard.h"
+#include "PageAlloc.h"
+#include "PageDirectory.h"
 #include "Pic.h"
+#include "Program.h"
 #include "Terminal.h"
 #include "VgaText.h"
+#include "elf64.h"
 #include "multiboot2.h"
 #include "string.h"
 
@@ -14,10 +18,14 @@ static void logMemory();
 static void logRamdisk(uintptr_t ramdiskStart, uintptr_t ramdiskEnd);
 static void findRamdisk(void* multibootInfo, uintptr_t* ramdiskStart, uintptr_t* ramdiskEnd);
 
+// TODO temporary
+extern uint64_t* kernel_page_table_l4;
+
 void kernel_main(void* multibootInfo)
 {
   VgaText_init();
   Terminal_init();
+  PageAlloc_init((void*) KERNEL_MEMORY_OFFSET + MBYTES(1) + KBYTES(512));
   Pic_init();
   Keyboard_init();
 
@@ -27,10 +35,13 @@ void kernel_main(void* multibootInfo)
   findRamdisk(multibootInfo, &ramdiskStart, &ramdiskEnd);
   logRamdisk(ramdiskStart, ramdiskEnd);
 
-  char* elfHeader = (char*) ramdiskStart;
-  elfHeader[4] = '\n';
-  elfHeader[5] = 0;
-  Terminal_print(elfHeader);
+	//struct Elf64_SectionHeaderEntry* textSection = Program_findTextSecion((void*) ramdiskStart);
+  //kprintf("%x\n", textSection->offset);
+
+  uint64_t* dir = PageDirectory_new();
+  PageDirectory_map(0xCAFE0000, 0xB8000, dir);
+  PageDirectory_use((uintptr_t) dir - KERNEL_MEMORY_OFFSET);
+  ((uint8_t*) 0xCAFE0000)[79 * 2] = '!';
 
   while(1) {
     __asm__("hlt");

@@ -4,6 +4,13 @@
 #include <stddef.h>
 #include <stdint.h>
 
+#define PRIVATE static
+
+#define KBYTES(n) (n * 1024)
+#define MBYTES(n) (n * 1024 * 1024)
+
+#define PAGE_SIZE KBYTES(4)
+
 #define KERNEL_MEMORY_OFFSET 0xFFFFFF8000000000ul
 
 struct Kernel_InterruptStack {
@@ -14,3 +21,7 @@ struct Kernel_InterruptStack {
 };
 
 void kprintf(const char* format, ...);
+
+#define STRINGIFY_DETAIL(x) #x
+#define STRINGIFY(x) STRINGIFY_DETAIL(x)
+#define klog(format, ...) kprintf(__FILE__ ":" STRINGIFY(__LINE__) ":" format "\n", __VA_ARGS__)
