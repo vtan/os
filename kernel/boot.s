@@ -153,6 +153,7 @@ _start64:
   call kernel_main
 
   cli
+.global halt
 halt:
   hlt
   jmp halt

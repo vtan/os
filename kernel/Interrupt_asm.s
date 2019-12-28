@@ -142,7 +142,8 @@ generic_exception_handler:
   call Interrupt_genericExceptionHandler
   popall
   add rsp, 16
-  iretq
+  jmp halt
+  # iretq
 
 generic_irq_handler:
   pushall
