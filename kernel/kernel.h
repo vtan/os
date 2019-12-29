@@ -24,4 +24,4 @@ void kprintf(const char* format, ...);
 
 #define STRINGIFY_DETAIL(x) #x
 #define STRINGIFY(x) STRINGIFY_DETAIL(x)
-#define klog(format, ...) kprintf(__FILE__ ":" STRINGIFY(__LINE__) ":" format "\n", __VA_ARGS__)
+#define klog(format, ...) kprintf(__FILE__ ":" STRINGIFY(__LINE__) ":" format "\n", ##__VA_ARGS__)

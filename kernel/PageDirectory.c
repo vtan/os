@@ -27,6 +27,8 @@ uint64_t* PageDirectory_new() {
 }
 
 void PageDirectory_map(uintptr_t virtualPageBase, uintptr_t physicalPageBase, uint64_t* l4Table) {
+  kprintf("Mapping page 0x%x to 0x%x\n", virtualPageBase, physicalPageBase);
+
   if (virtualPageBase & 0xFFFF800000000000) {
     klog("Invalid virtual page base: %x", virtualPageBase);
     return;

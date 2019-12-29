@@ -39,6 +39,7 @@ struct Elf64_SectionHeaderEntry {
   uint64_t flags;
   uint64_t virtualAddress;
   uint64_t offset;
+  uint64_t size;
   uint32_t link;
   uint32_t info;
   uint64_t alignment;

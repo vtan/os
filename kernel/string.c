@@ -82,3 +82,10 @@ void memmove(uint8_t* dest, const uint8_t* src, size_t count) {
     }
   }
 }
+
+void memcpy(uint8_t* dest, const uint8_t* source, size_t count) {
+  const uint8_t* end = source + count;
+  while (source < end) {
+    *dest++ = *source++;
+  }
+}

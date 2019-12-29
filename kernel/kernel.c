@@ -4,10 +4,9 @@
 #include "PageAlloc.h"
 #include "PageDirectory.h"
 #include "Pic.h"
-#include "Program.h"
+#include "Process.h"
 #include "Terminal.h"
 #include "VgaText.h"
-#include "elf64.h"
 #include "multiboot2.h"
 #include "string.h"
 
@@ -35,13 +34,13 @@ void kernel_main(void* multibootInfo)
   findRamdisk(multibootInfo, &ramdiskStart, &ramdiskEnd);
   logRamdisk(ramdiskStart, ramdiskEnd);
 
-	//struct Elf64_SectionHeaderEntry* textSection = Program_findTextSecion((void*) ramdiskStart);
-  //kprintf("%x\n", textSection->offset);
-
-  uint64_t* dir = PageDirectory_new();
-  PageDirectory_map(0xCAFE0000, 0xB8000, dir);
-  PageDirectory_use((uintptr_t) dir - KERNEL_MEMORY_OFFSET);
-  ((uint8_t*) 0xCAFE0000)[79 * 2] = '!';
+  struct Process process = { 0 };
+  Process_load((void*) ramdiskStart, &process);
+  kprintf("Process entry point: 0x%x\n", process.entryPoint);
+  kprintf("Process stack top: 0x%x\n", process.stackTop);
+  uint64_t result = Process_run(&process);
+  PageDirectory_use(((uintptr_t) &kernel_page_table_l4) - KERNEL_MEMORY_OFFSET);
+  kprintf("Process result: %d\n", result);
 
   while(1) {
     __asm__("hlt");
