@@ -1,3 +1,5 @@
+extern "C" {
+
 #include "kernel.h"
 
 #include "Keyboard.h"
@@ -39,7 +41,7 @@ void kernel_main(void* multibootInfo)
   kprintf("Process entry point: 0x%x\n", process.entryPoint);
   kprintf("Process stack top: 0x%x\n", process.stackTop);
   uint64_t result = Process_run(&process);
-  PageDirectory_use(((uintptr_t) &kernel_page_table_l4) - KERNEL_MEMORY_OFFSET);
+  PageDirectory_use((uint64_t*) (((uintptr_t) &kernel_page_table_l4) - KERNEL_MEMORY_OFFSET));
   kprintf("Process result: %d\n", result);
 
   while(1) {
@@ -56,6 +58,8 @@ void kprintf(const char* format, ...) {
   va_end(args);
 
   Terminal_print(str);
+}
+
 }
 
 static void logMemory() {

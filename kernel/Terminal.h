@@ -1,6 +1,6 @@
 #pragma once
 
-enum VgaText_Color;
+#include "VgaText.h"
 
 void Terminal_init();
 void Terminal_print(const char* str);

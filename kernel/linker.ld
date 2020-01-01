@@ -17,6 +17,10 @@ SECTIONS
   {
     *(.multiboot)
     *(.text)
+    *(.init)
+    *(.fini)
+    *(.ctors)
+    *(.dtors)
   }
 
   /* Read-only data. */
