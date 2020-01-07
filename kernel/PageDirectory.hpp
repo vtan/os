@@ -2,20 +2,28 @@
 
 #include "kernel.hpp"
 
-class PageAllocator;
-
+extern "C" uint64_t* kernel_page_table_l4;
 extern "C" void PageDirectory_use(uint64_t* physicalL4Table);
 
-class PageDirectory {
-  PageAllocator& pageAllocator;
+struct PageDirectory {
   uint64_t* l4Table;
 
+  inline void use() const { PageDirectory_use((uint64_t*) ((uintptr_t) this->l4Table - KERNEL_MEMORY_OFFSET)); }
+};
+
+const PageDirectory KERNEL_PAGE_DIRECTORY =
+  PageDirectory{ .l4Table = (uint64_t*) &kernel_page_table_l4 };
+
+class PageAllocator;
+
+class PageDirectoryManager {
+  PageAllocator& pageAllocator;
+
 public:
-  PageDirectory(PageAllocator&);
+  PageDirectoryManager(PageAllocator& pa) : pageAllocator(pa) {}
 
-  void map(uintptr_t virtualPageBase, uintptr_t physicalPageBase);
-
-  inline void use() { PageDirectory_use((uint64_t*) (((uintptr_t) this->l4Table) - KERNEL_MEMORY_OFFSET)); }
+  PageDirectory create();
+  void addMapping(uintptr_t virtualPageBase, uintptr_t physicalPageBase, PageDirectory&);
 private:
   uint64_t* getOrAllocSubtable(uint64_t* table, size_t index);
 };

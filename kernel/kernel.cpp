@@ -20,8 +20,6 @@ static void logMemory();
 static void logRamdisk(uintptr_t ramdiskStart, uintptr_t ramdiskEnd);
 static void findRamdisk(void* multibootInfo, uintptr_t* ramdiskStart, uintptr_t* ramdiskEnd);
 
-// TODO temporary
-extern uint64_t* kernel_page_table_l4;
 
 static Keyboard* globalKeyboardDriver;
 
@@ -32,7 +30,8 @@ extern "C"
 void kernel_main(void* multibootInfo)
 {
   PageAllocator pageAllocator((void*) KERNEL_MEMORY_OFFSET + MBYTES(1) + KBYTES(512));
-  ProcessLoader processLoader(pageAllocator);
+  PageDirectoryManager pageDirectoryManager(pageAllocator);
+  ProcessLoader processLoader(pageAllocator, pageDirectoryManager);
   Pic_init();
   Keyboard keyboardDriver(globalTerminal);
   globalKeyboardDriver = &keyboardDriver;
@@ -48,7 +47,7 @@ void kernel_main(void* multibootInfo)
   kprintf("Process entry point: 0x%x\n", process.entryPoint);
   kprintf("Process stack top: 0x%x\n", process.stackTop);
   uint64_t result = Process_run(&process);
-  PageDirectory_use((uint64_t*) (((uintptr_t) &kernel_page_table_l4) - KERNEL_MEMORY_OFFSET));
+  KERNEL_PAGE_DIRECTORY.use();
   kprintf("Process result: %d\n", result);
 
   while(1) {

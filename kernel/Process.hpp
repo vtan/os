@@ -7,9 +7,11 @@ struct Process {
 
 class ProcessLoader {
   PageAllocator& pageAllocator;
+  PageDirectoryManager& pageDirectoryManager;
 
 public:
-  ProcessLoader(PageAllocator& pa) : pageAllocator(pa) {}
+  ProcessLoader(PageAllocator& pa, PageDirectoryManager& pdm)
+    : pageAllocator(pa), pageDirectoryManager(pdm) {}
 
   void load(void* elf, Process*);
 };

@@ -15,15 +15,22 @@
 
 extern void* kernel_page_table_l3;
 
-PageDirectory::PageDirectory(PageAllocator& pa) : pageAllocator(pa) {
-  this->l4Table = (uint64_t*) this->pageAllocator.allocate();
-  memset((uint8_t*) this->l4Table, 0, 511 * sizeof(uint64_t));
+PageDirectory PageDirectoryManager::create() {
+  PageDirectory directory;
+  directory.l4Table = (uint64_t*) this->pageAllocator.allocate();
+  memset((uint8_t*) directory.l4Table, 0, 511 * sizeof(uint64_t));
 
   const uintptr_t kernelL3Flags = PAGE_PRESENT | PAGE_WRITABLE; // TODO writable is temporary
-  this->l4Table[511] = PAGE_BASE_TO_TABLE_ENTRY(&kernel_page_table_l3) | kernelL3Flags;
+  directory.l4Table[511] = PAGE_BASE_TO_TABLE_ENTRY(&kernel_page_table_l3) | kernelL3Flags;
+
+  return directory;
 }
 
-void PageDirectory::map(uintptr_t virtualPageBase, uintptr_t physicalPageBase) {
+void PageDirectoryManager::addMapping(
+  const uintptr_t virtualPageBase,
+  const uintptr_t physicalPageBase,
+  PageDirectory& directory
+) {
   kprintf("Mapping page 0x%x to 0x%x\n", virtualPageBase, physicalPageBase);
 
   if (virtualPageBase & 0xFFFF800000000000) {
@@ -36,7 +43,7 @@ void PageDirectory::map(uintptr_t virtualPageBase, uintptr_t physicalPageBase) {
   size_t l2Index = (virtualPageBase >> (12 + 9)) & LOWER_9_BIT_MASK;
   size_t l1Index = (virtualPageBase >> 12) & LOWER_9_BIT_MASK;
 
-  uint64_t* l3Table = getOrAllocSubtable(this->l4Table, l4Index);
+  uint64_t* l3Table = getOrAllocSubtable(directory.l4Table, l4Index);
   uint64_t* l2Table = getOrAllocSubtable(l3Table, l3Index);
   uint64_t* l1Table = getOrAllocSubtable(l2Table, l2Index);
 
@@ -49,7 +56,7 @@ void PageDirectory::map(uintptr_t virtualPageBase, uintptr_t physicalPageBase) {
   }
 }
 
-uint64_t* PageDirectory::getOrAllocSubtable(uint64_t* table, const size_t index) {
+uint64_t* PageDirectoryManager::getOrAllocSubtable(uint64_t* table, const size_t index) {
   uint64_t* subtable = (uint64_t*) table[index];
   if (subtable == 0) {
     subtable = (uint64_t*) this->pageAllocator.allocate();

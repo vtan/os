@@ -28,12 +28,20 @@ void ProcessLoader::load(void* elf, struct Process* process) {
     return;
   }
 
-  PageDirectory pageDirectory(this->pageAllocator);
+  PageDirectory pageDirectory = this->pageDirectoryManager.create();
   void* segmentPage = this->pageAllocator.allocate();
   void* stackPage = this->pageAllocator.allocate();
-  pageDirectory.map(segment->virtualAddress, (uintptr_t) segmentPage - KERNEL_MEMORY_OFFSET);
+  this->pageDirectoryManager.addMapping(
+    segment->virtualAddress,
+    (uintptr_t) segmentPage - KERNEL_MEMORY_OFFSET,
+    pageDirectory
+  );
   uintptr_t stackBottom = segment->virtualAddress + PAGE_SIZE;
-  pageDirectory.map(stackBottom, (uintptr_t) stackPage - KERNEL_MEMORY_OFFSET);
+  this->pageDirectoryManager.addMapping(
+    stackBottom,
+    (uintptr_t) stackPage - KERNEL_MEMORY_OFFSET,
+    pageDirectory
+  );
   pageDirectory.use();
 
   struct Elf64_SectionHeaderEntry* textSection = findTextSection(header);
