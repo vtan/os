@@ -1,16 +1,17 @@
+#include "kernel.hpp"
+
+#include "Keyboard.hpp"
+#include "PageAlloc.hpp"
+#include "PageDirectory.hpp"
+#include "Pic.hpp"
+#include "Process.hpp"
+#include "String.hpp"
+#include "Terminal.hpp"
+#include "VgaText.hpp"
+
 extern "C" {
-
-#include "kernel.h"
-
-#include "Keyboard.h"
-#include "PageAlloc.h"
-#include "PageDirectory.h"
-#include "Pic.h"
-#include "Process.h"
-#include "Terminal.h"
-#include "VgaText.h"
 #include "multiboot2.h"
-#include "string.h"
+}
 
 extern void* _kernel_start;
 extern void* _kernel_end;
@@ -22,6 +23,7 @@ static void findRamdisk(void* multibootInfo, uintptr_t* ramdiskStart, uintptr_t*
 // TODO temporary
 extern uint64_t* kernel_page_table_l4;
 
+extern "C"
 void kernel_main(void* multibootInfo)
 {
   VgaText_init();
@@ -49,6 +51,7 @@ void kernel_main(void* multibootInfo)
   }
 }
 
+extern "C"
 void kernel_exception(struct Kernel_InterruptStack* stack) {
   Terminal_setColor(VgaText_LIGHT_RED, VgaText_BLACK);
   kprintf("Exception, halting\n");
@@ -58,6 +61,7 @@ void kernel_exception(struct Kernel_InterruptStack* stack) {
   kprintf("Error code: 0x%x\n", stack->errorCode);
 }
 
+extern "C"
 void kernel_irq(struct Kernel_InterruptStack* stack) {
   if (stack->interruptNumber == 0x21) {
     Keyboard_handler();
@@ -73,8 +77,6 @@ void kprintf(const char* format, ...) {
   va_end(args);
 
   Terminal_print(str);
-}
-
 }
 
 static void logMemory() {

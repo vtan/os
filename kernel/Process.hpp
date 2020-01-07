@@ -6,4 +6,4 @@ struct Process {
 };
 
 void Process_load(void* elf, struct Process*);
-uint64_t Process_run(struct Process*);
+extern "C" uint64_t Process_run(struct Process*);

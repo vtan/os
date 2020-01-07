@@ -1,13 +1,13 @@
-#include "kernel.h"
+#include "kernel.hpp"
 
-#include "Keyboard.h"
-#include "Pic.h"
-#include "Port.h"
-#include "Terminal.h"
+#include "Keyboard.hpp"
+#include "Pic.hpp"
+#include "Port.hpp"
+#include "Terminal.hpp"
 
 #define Keyboard_PORT 0x60
 
-const char keyChars[256] = {
+const char keyChars[128] = {
   0, '\e', '1', '2', '3', '4', '5', '6',
   '7', '8', '9', '0', '-', '=', '\b', '\t',
   'q', 'w', 'e', 'r', 't', 'y', 'u', 'i',
@@ -15,9 +15,11 @@ const char keyChars[256] = {
   'd', 'f', 'g', 'h', 'j', 'k', 'l', ';',
   '\'', '`', 0, '\\', 'z', 'x', 'c', 'v',
   'b', 'n', 'm', ',', '.', '/', 0, 0,
-  0, ' ',
+  0, ' '
+};
 
-  [128] = 0, '\e', '!', '@', '#', '$', '%', '^',
+const char keyCharsShift[128] = {
+  0, '\e', '!', '@', '#', '$', '%', '^',
   '&', '*', '(', ')', '_', '+', '\b', '\t',
   'Q', 'W', 'E', 'R', 'T', 'Y', 'U', 'I',
   'O', 'P', '{', '}', '\n', 0, 'A', 'S',
@@ -65,12 +67,12 @@ void Keyboard_handler() {
   } else if (scanCode == 0xB6) {
     state.modifiers &= ~Keyboard_RIGHT_SHIFT;
   } else if (scanCode < 0x80) {
-    const size_t charIndex =
+    const char ch =
       state.modifiers & (Keyboard_LEFT_SHIFT | Keyboard_RIGHT_SHIFT)
-        ? scanCode + 128
-        : scanCode;
+        ? keyCharsShift[scanCode]
+        : keyChars[scanCode];
     char str[2];
-    str[0] = keyChars[charIndex];
+    str[0] = ch;
     str[1] = 0;
     Terminal_print(str);
   }

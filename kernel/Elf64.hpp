@@ -1,4 +1,4 @@
-#include <stdint.h>
+#include "kernel.hpp"
 
 #define Elf64_MAGIC_NUMBER 0x464C457F
 

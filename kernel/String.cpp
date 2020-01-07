@@ -1,7 +1,7 @@
 #include <stdarg.h>
 
-#include "kernel.h"
-#include "string.h"
+#include "kernel.hpp"
+#include "String.hpp"
 
 const char* const digits = "0123456789ABCDEF";
 

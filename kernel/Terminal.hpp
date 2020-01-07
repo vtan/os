@@ -1,6 +1,6 @@
 #pragma once
 
-#include "VgaText.h"
+#include "VgaText.hpp"
 
 void Terminal_init();
 void Terminal_print(const char* str);

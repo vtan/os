@@ -1,5 +1,5 @@
-#include "kernel.h"
-#include "PageAlloc.h"
+#include "kernel.hpp"
+#include "PageAlloc.hpp"
 
 struct PageAlloc_State {
   void* nextPage;

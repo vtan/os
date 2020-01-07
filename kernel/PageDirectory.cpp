@@ -1,7 +1,7 @@
-#include "kernel.h"
-#include "string.h"
-#include "PageAlloc.h"
-#include "PageDirectory.h"
+#include "kernel.hpp"
+#include "String.hpp"
+#include "PageAlloc.hpp"
+#include "PageDirectory.hpp"
 
 #define LOWER_4K_MASK 07777
 #define LOWER_9_BIT_MASK 0777
@@ -17,7 +17,7 @@ PRIVATE uint64_t* getOrAllocSubtable(uint64_t* table, const size_t index);
 extern void* kernel_page_table_l3;
 
 uint64_t* PageDirectory_new() {
-  uint64_t* l4Table = PageAlloc_alloc();
+  uint64_t* l4Table = (uint64_t*) PageAlloc_alloc();
   memset((uint8_t*) l4Table, 0, 511 * sizeof(uint64_t));
 
   const uintptr_t kernelL3Flags = PAGE_PRESENT | PAGE_WRITABLE; // TODO writable is temporary
@@ -55,7 +55,7 @@ void PageDirectory_map(uintptr_t virtualPageBase, uintptr_t physicalPageBase, ui
 PRIVATE uint64_t* getOrAllocSubtable(uint64_t* table, const size_t index) {
   uint64_t* subtable = (uint64_t*) table[index];
   if (subtable == 0) {
-    subtable = PageAlloc_alloc();
+    subtable = (uint64_t*) PageAlloc_alloc();
     const uintptr_t flags = PAGE_PRESENT | PAGE_WRITABLE | PAGE_USER;
     table[index] = PAGE_BASE_TO_TABLE_ENTRY(subtable) | flags;
   } else {

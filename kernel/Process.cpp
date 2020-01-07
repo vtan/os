@@ -1,14 +1,15 @@
-#include "kernel.h"
-#include "string.h"
-#include "Elf64.h"
-#include "PageAlloc.h"
-#include "PageDirectory.h"
-#include "Process.h"
+#include "kernel.hpp"
+
+#include "Elf64.hpp"
+#include "PageAlloc.hpp"
+#include "PageDirectory.hpp"
+#include "Process.hpp"
+#include "String.hpp"
 
 PRIVATE struct Elf64_SectionHeaderEntry* findTextSection(struct Elf64_Header*);
 
 void Process_load(void* elf, struct Process* process) {
-  struct Elf64_Header* header = elf;
+  struct Elf64_Header* header = (Elf64_Header*) elf;
 
   if (header->programHeaderEntrySize == 0) {
     klog("No program header in ELF");

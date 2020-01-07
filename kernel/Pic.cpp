@@ -1,5 +1,5 @@
-#include "Pic.h"
-#include "Port.h"
+#include "Pic.hpp"
+#include "Port.hpp"
 
 void Pic_init() {
   Port_out(Pic_MASTER_COMMAND, 0x10);

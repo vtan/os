@@ -1,5 +1,5 @@
-#include "Terminal.h"
-#include "VgaText.h"
+#include "Terminal.hpp"
+#include "VgaText.hpp"
 
 struct Terminal_State {
   size_t offset;
