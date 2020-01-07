@@ -4,9 +4,7 @@
 #include "String.hpp"
 #include "VgaText.hpp"
 
-static uint16_t* VgaText_buffer = (uint16_t*) (KERNEL_MEMORY_OFFSET + 0xB8000);
-
-void VgaText_init() {
+VgaText::VgaText() {
   const uint8_t cursorStartRegister = 0xA;
   const uint8_t cursorEndRegister = 0xB;
   const uint8_t scanlineStart = 0xA;
@@ -22,35 +20,31 @@ void VgaText_init() {
   Port_out(0x3D5, endLine);
 }
 
-void VgaText_put(size_t offset, uint8_t attributes, uint8_t character) {
-  if (offset < VgaText_PAGE_SIZE) {
-    VgaText_buffer[offset] = (uint16_t) character | (uint16_t) attributes << 8;
+void VgaText::put(size_t offset, uint8_t attributes, uint8_t character) {
+  if (offset < VgaText::SCREEN_SIZE) {
+    this->buffer[offset] = (uint16_t) character | (uint16_t) attributes << 8;
   }
 }
 
-void VgaText_scrollUp() {
+void VgaText::scrollUp() {
   memmove(
-    (uint8_t*) VgaText_buffer,
-    (uint8_t*) (VgaText_buffer + VgaText_WIDTH),
-    sizeof(uint16_t) * (VgaText_PAGE_SIZE - VgaText_WIDTH)
+    (uint8_t*) this->buffer,
+    (uint8_t*) (this->buffer + VgaText::WIDTH),
+    sizeof(uint16_t) * (VgaText::SCREEN_SIZE - VgaText::WIDTH)
   );
 
-  const uint16_t blank = ' ' | VgaText_color(VgaText_LIGHT_GREY, VgaText_BLACK) << 8;
-  for (size_t i = VgaText_PAGE_SIZE - VgaText_WIDTH; i < VgaText_PAGE_SIZE; ++i) {
-    VgaText_buffer[i] = blank;
+  const uint16_t blank = ' ' | VgaText::colorFrom(VgaText::Color::LIGHT_GREY, VgaText::Color::BLACK) << 8;
+  for (size_t i = VgaText::SCREEN_SIZE - VgaText::WIDTH; i < VgaText::SCREEN_SIZE; ++i) {
+    this->buffer[i] = blank;
   }
 }
 
-void VgaText_moveCursor(size_t offset) {
-  if (offset < VgaText_PAGE_SIZE) {
+void VgaText::moveCursor(size_t offset) {
+  if (offset < VgaText::SCREEN_SIZE) {
     Port_out(0x3D4, 0x0F);
     Port_out(0x3D5, offset & 0xFF);
 
     Port_out(0x3D4, 0x0E);
     Port_out(0x3D5, (offset >> 8) & 0xFF);
   }
-}
-
-uint8_t VgaText_color(enum VgaText_Color foreground, enum VgaText_Color background) {
-	return foreground | background << 4;
 }

@@ -8,7 +8,7 @@
 
 PRIVATE struct Elf64_SectionHeaderEntry* findTextSection(struct Elf64_Header*);
 
-void Process_load(void* elf, struct Process* process) {
+void ProcessLoader::load(void* elf, struct Process* process) {
   struct Elf64_Header* header = (Elf64_Header*) elf;
 
   if (header->programHeaderEntrySize == 0) {
@@ -28,13 +28,13 @@ void Process_load(void* elf, struct Process* process) {
     return;
   }
 
-  uint64_t* pageDirectory = PageDirectory_new();
-  void* segmentPage = PageAlloc_alloc();
-  void* stackPage = PageAlloc_alloc();
-  PageDirectory_map(segment->virtualAddress, (uintptr_t) segmentPage - KERNEL_MEMORY_OFFSET, pageDirectory);
+  PageDirectory pageDirectory(this->pageAllocator);
+  void* segmentPage = this->pageAllocator.allocate();
+  void* stackPage = this->pageAllocator.allocate();
+  pageDirectory.map(segment->virtualAddress, (uintptr_t) segmentPage - KERNEL_MEMORY_OFFSET);
   uintptr_t stackBottom = segment->virtualAddress + PAGE_SIZE;
-  PageDirectory_map(stackBottom, (uintptr_t) stackPage - KERNEL_MEMORY_OFFSET, pageDirectory);
-  PageDirectory_use((uint64_t*) (((uintptr_t) pageDirectory) - KERNEL_MEMORY_OFFSET));
+  pageDirectory.map(stackBottom, (uintptr_t) stackPage - KERNEL_MEMORY_OFFSET);
+  pageDirectory.use();
 
   struct Elf64_SectionHeaderEntry* textSection = findTextSection(header);
   memcpy(

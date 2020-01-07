@@ -7,7 +7,7 @@
 
 #define Keyboard_PORT 0x60
 
-const char keyChars[128] = {
+static const char keyChars[128] = {
   0, '\e', '1', '2', '3', '4', '5', '6',
   '7', '8', '9', '0', '-', '=', '\b', '\t',
   'q', 'w', 'e', 'r', 't', 'y', 'u', 'i',
@@ -18,7 +18,7 @@ const char keyChars[128] = {
   0, ' '
 };
 
-const char keyCharsShift[128] = {
+static const char keyCharsShift[128] = {
   0, '\e', '!', '@', '#', '$', '%', '^',
   '&', '*', '(', ')', '_', '+', '\b', '\t',
   'Q', 'W', 'E', 'R', 'T', 'Y', 'U', 'I',
@@ -34,47 +34,37 @@ enum Keyboard_Modifier {
   Keyboard_RIGHT_SHIFT = 1 << 1
 };
 
-struct Keyboard_State {
-  uint8_t modifiers;
-  int ignoreBytes;
-};
-
-static struct Keyboard_State state = {
-  .modifiers = 0,
-  .ignoreBytes = 0
-};
-
-void Keyboard_init() {
+Keyboard::Keyboard(Terminal& t) : terminal(t) {
   uint8_t picInterruptMask = Port_in(Pic_MASTER_DATA);
   Port_out(Pic_MASTER_DATA, picInterruptMask & 0xFD);
 }
 
-void Keyboard_handler() {
+void Keyboard::handleIrq() {
   const uint8_t scanCode = Port_in(Keyboard_PORT);
 
-  if (state.ignoreBytes > 0) {
-    --state.ignoreBytes;
+  if (this->ignoreBytes > 0) {
+    --this->ignoreBytes;
   } else if (scanCode == 0xE0) {
-    state.ignoreBytes = 1;
+    this->ignoreBytes = 1;
   } else if (scanCode == 0xE1) {
-    state.ignoreBytes = 2;
+    this->ignoreBytes = 2;
   } else if (scanCode == 0x2A) {
-    state.modifiers |= Keyboard_LEFT_SHIFT;
+    this->modifiers |= Keyboard_LEFT_SHIFT;
   } else if (scanCode == 0x36) {
-    state.modifiers |= Keyboard_RIGHT_SHIFT;
+    this->modifiers |= Keyboard_RIGHT_SHIFT;
   } else if (scanCode == 0xAA) {
-    state.modifiers &= ~Keyboard_LEFT_SHIFT;
+    this->modifiers &= ~Keyboard_LEFT_SHIFT;
   } else if (scanCode == 0xB6) {
-    state.modifiers &= ~Keyboard_RIGHT_SHIFT;
+    this->modifiers &= ~Keyboard_RIGHT_SHIFT;
   } else if (scanCode < 0x80) {
     const char ch =
-      state.modifiers & (Keyboard_LEFT_SHIFT | Keyboard_RIGHT_SHIFT)
+      this->modifiers & (Keyboard_LEFT_SHIFT | Keyboard_RIGHT_SHIFT)
         ? keyCharsShift[scanCode]
         : keyChars[scanCode];
     char str[2];
     str[0] = ch;
     str[1] = 0;
-    Terminal_print(str);
+    this->terminal.print(str);
   }
 
   Port_out(Pic_MASTER_COMMAND, Pic_END_OF_INTERRUPT);

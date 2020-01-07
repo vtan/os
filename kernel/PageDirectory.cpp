@@ -1,4 +1,5 @@
 #include "kernel.hpp"
+
 #include "String.hpp"
 #include "PageAlloc.hpp"
 #include "PageDirectory.hpp"
@@ -12,21 +13,17 @@
 #define PAGE_WRITABLE (1 << 1)
 #define PAGE_USER (1 << 2)
 
-PRIVATE uint64_t* getOrAllocSubtable(uint64_t* table, const size_t index);
-
 extern void* kernel_page_table_l3;
 
-uint64_t* PageDirectory_new() {
-  uint64_t* l4Table = (uint64_t*) PageAlloc_alloc();
-  memset((uint8_t*) l4Table, 0, 511 * sizeof(uint64_t));
+PageDirectory::PageDirectory(PageAllocator& pa) : pageAllocator(pa) {
+  this->l4Table = (uint64_t*) this->pageAllocator.allocate();
+  memset((uint8_t*) this->l4Table, 0, 511 * sizeof(uint64_t));
 
   const uintptr_t kernelL3Flags = PAGE_PRESENT | PAGE_WRITABLE; // TODO writable is temporary
-  l4Table[511] = PAGE_BASE_TO_TABLE_ENTRY(&kernel_page_table_l3) | kernelL3Flags;
-
-  return l4Table;
+  this->l4Table[511] = PAGE_BASE_TO_TABLE_ENTRY(&kernel_page_table_l3) | kernelL3Flags;
 }
 
-void PageDirectory_map(uintptr_t virtualPageBase, uintptr_t physicalPageBase, uint64_t* l4Table) {
+void PageDirectory::map(uintptr_t virtualPageBase, uintptr_t physicalPageBase) {
   kprintf("Mapping page 0x%x to 0x%x\n", virtualPageBase, physicalPageBase);
 
   if (virtualPageBase & 0xFFFF800000000000) {
@@ -39,7 +36,7 @@ void PageDirectory_map(uintptr_t virtualPageBase, uintptr_t physicalPageBase, ui
   size_t l2Index = (virtualPageBase >> (12 + 9)) & LOWER_9_BIT_MASK;
   size_t l1Index = (virtualPageBase >> 12) & LOWER_9_BIT_MASK;
 
-  uint64_t* l3Table = getOrAllocSubtable(l4Table, l4Index);
+  uint64_t* l3Table = getOrAllocSubtable(this->l4Table, l4Index);
   uint64_t* l2Table = getOrAllocSubtable(l3Table, l3Index);
   uint64_t* l1Table = getOrAllocSubtable(l2Table, l2Index);
 
@@ -52,10 +49,10 @@ void PageDirectory_map(uintptr_t virtualPageBase, uintptr_t physicalPageBase, ui
   }
 }
 
-PRIVATE uint64_t* getOrAllocSubtable(uint64_t* table, const size_t index) {
+uint64_t* PageDirectory::getOrAllocSubtable(uint64_t* table, const size_t index) {
   uint64_t* subtable = (uint64_t*) table[index];
   if (subtable == 0) {
-    subtable = (uint64_t*) PageAlloc_alloc();
+    subtable = (uint64_t*) this->pageAllocator.allocate();
     const uintptr_t flags = PAGE_PRESENT | PAGE_WRITABLE | PAGE_USER;
     table[index] = PAGE_BASE_TO_TABLE_ENTRY(subtable) | flags;
   } else {

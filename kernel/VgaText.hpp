@@ -1,34 +1,41 @@
 #pragma once
 
-#include <stddef.h>
-#include <stdint.h>
+#include "kernel.hpp"
 
-#define VgaText_WIDTH 80
-#define VgaText_HEIGHT 25
-#define VgaText_PAGE_SIZE (VgaText_WIDTH * VgaText_HEIGHT)
+class VgaText {
+  uint16_t* buffer = (uint16_t*) (KERNEL_MEMORY_OFFSET + 0xB8000);
 
-enum VgaText_Color {
-  VgaText_BLACK = 0,
-  VgaText_BLUE = 1,
-  VgaText_GREEN = 2,
-  VgaText_CYAN = 3,
-  VgaText_RED = 4,
-  VgaText_MAGENTA = 5,
-  VgaText_BROWN = 6,
-  VgaText_LIGHT_GREY = 7,
-  VgaText_DARK_GREY = 8,
-  VgaText_LIGHT_BLUE = 9,
-  VgaText_LIGHT_GREEN = 10,
-  VgaText_LIGHT_CYAN = 11,
-  VgaText_LIGHT_RED = 12,
-  VgaText_LIGHT_MAGENTA = 13,
-  VgaText_LIGHT_BROWN = 14,
-  VgaText_WHITE = 15,
+public:
+  enum class Color : uint8_t {
+    BLACK = 0,
+    BLUE = 1,
+    GREEN = 2,
+    CYAN = 3,
+    RED = 4,
+    MAGENTA = 5,
+    BROWN = 6,
+    LIGHT_GREY = 7,
+    DARK_GREY = 8,
+    LIGHT_BLUE = 9,
+    LIGHT_GREEN = 10,
+    LIGHT_CYAN = 11,
+    LIGHT_RED = 12,
+    LIGHT_MAGENTA = 13,
+    LIGHT_BROWN = 14,
+    WHITE = 15,
+  };
+
+  static constexpr int WIDTH = 80;
+  static constexpr int HEIGHT = 25;
+  static constexpr int SCREEN_SIZE = WIDTH * HEIGHT;
+
+  VgaText();
+
+  void put(size_t offset, uint8_t attributes, uint8_t character);
+  void scrollUp();
+  void moveCursor(size_t offset);
+
+  static inline uint8_t colorFrom(Color foreground, Color background) {
+    return (uint8_t) foreground | (uint8_t) background << 4;
+  }
 };
-
-void VgaText_init();
-void VgaText_put(size_t offset, uint8_t attributes, uint8_t character);
-void VgaText_scrollUp();
-void VgaText_moveCursor(size_t offset);
-
-uint8_t VgaText_color(enum VgaText_Color foreground, enum VgaText_Color background);

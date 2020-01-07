@@ -2,6 +2,14 @@
 
 #include "VgaText.hpp"
 
-void Terminal_init();
-void Terminal_print(const char* str);
-void Terminal_setColor(enum VgaText_Color fg, enum VgaText_Color bg);
+class Terminal {
+  VgaText& vgaText;
+  size_t offset;
+  uint8_t attributes;
+
+public:
+  Terminal(VgaText&);
+
+  void print(const char*);
+  void setColor(VgaText::Color fg, VgaText::Color bg);
+};

@@ -1,4 +1,10 @@
 #pragma once
 
-void PageAlloc_init(void* memoryBase);
-void* PageAlloc_alloc();
+class PageAllocator {
+  void* nextPage;
+
+public:
+  PageAllocator(void* memoryBase) : nextPage(memoryBase) {}
+
+  void* allocate();
+};

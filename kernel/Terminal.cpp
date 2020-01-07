@@ -1,47 +1,40 @@
 #include "Terminal.hpp"
 #include "VgaText.hpp"
 
-struct Terminal_State {
-  size_t offset;
-  uint8_t attributes;
-};
+Terminal::Terminal(VgaText& vt) : vgaText(vt) {
+  this->offset = 0;
+  this->attributes = VgaText::colorFrom(VgaText::Color::LIGHT_GREY, VgaText::Color::BLACK);
 
-static struct Terminal_State state;
-
-void Terminal_init() {
-  state.offset = 0;
-  state.attributes = VgaText_color(VgaText_LIGHT_GREY, VgaText_BLACK);
-
-  for (size_t i = 0; i < VgaText_WIDTH * VgaText_HEIGHT; ++i) {
-    VgaText_put(i, state.attributes, ' ');
+  for (size_t i = 0; i < VgaText::WIDTH * VgaText::HEIGHT; ++i) {
+    this->vgaText.put(i, this->attributes, ' ');
   }
-  VgaText_moveCursor(0);
+  this->vgaText.moveCursor(0);
 }
 
-void Terminal_print(const char* str) {
+void Terminal::print(const char* str) {
   if (*str == 0) {
     return;
   }
 
   while (*str != 0) {
     if (*str == '\n') {
-      const size_t x = state.offset % VgaText_WIDTH;
-      state.offset += VgaText_WIDTH - x;
+      const size_t x = this->offset % VgaText::WIDTH;
+      this->offset += VgaText::WIDTH - x;
     } else {
-      VgaText_put(state.offset, state.attributes, *str);
-      ++state.offset;
+      this->vgaText.put(this->offset, this->attributes, *str);
+      ++this->offset;
     }
 
-    if (state.offset >= VgaText_PAGE_SIZE) {
-      VgaText_scrollUp();
-      state.offset -= VgaText_WIDTH;
+    if (this->offset >= VgaText::SCREEN_SIZE) {
+      this->vgaText.scrollUp();
+      this->offset -= VgaText::WIDTH;
     }
 
     ++str;
   }
-  VgaText_moveCursor(state.offset);
+  this->vgaText.moveCursor(this->offset);
 }
 
-void Terminal_setColor(enum VgaText_Color fg, enum VgaText_Color bg) {
-  state.attributes = VgaText_color(fg, bg);
+void Terminal::setColor(VgaText::Color fg, VgaText::Color bg) {
+  this->attributes = VgaText::colorFrom(fg, bg);
 }

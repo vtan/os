@@ -23,14 +23,19 @@ static void findRamdisk(void* multibootInfo, uintptr_t* ramdiskStart, uintptr_t*
 // TODO temporary
 extern uint64_t* kernel_page_table_l4;
 
+static Keyboard* globalKeyboardDriver;
+
+static VgaText globalVgaText;
+static Terminal globalTerminal(globalVgaText);
+
 extern "C"
 void kernel_main(void* multibootInfo)
 {
-  VgaText_init();
-  Terminal_init();
-  PageAlloc_init((void*) KERNEL_MEMORY_OFFSET + MBYTES(1) + KBYTES(512));
+  PageAllocator pageAllocator((void*) KERNEL_MEMORY_OFFSET + MBYTES(1) + KBYTES(512));
+  ProcessLoader processLoader(pageAllocator);
   Pic_init();
-  Keyboard_init();
+  Keyboard keyboardDriver(globalTerminal);
+  globalKeyboardDriver = &keyboardDriver;
 
   logMemory();
 
@@ -39,7 +44,7 @@ void kernel_main(void* multibootInfo)
   logRamdisk(ramdiskStart, ramdiskEnd);
 
   struct Process process = { 0 };
-  Process_load((void*) ramdiskStart, &process);
+  processLoader.load((void*) ramdiskStart, &process);
   kprintf("Process entry point: 0x%x\n", process.entryPoint);
   kprintf("Process stack top: 0x%x\n", process.stackTop);
   uint64_t result = Process_run(&process);
@@ -53,9 +58,9 @@ void kernel_main(void* multibootInfo)
 
 extern "C"
 void kernel_exception(struct Kernel_InterruptStack* stack) {
-  Terminal_setColor(VgaText_LIGHT_RED, VgaText_BLACK);
+  globalTerminal.setColor(VgaText::Color::LIGHT_RED, VgaText::Color::BLACK);
   kprintf("Exception, halting\n");
-  Terminal_setColor(VgaText_LIGHT_GREY, VgaText_BLACK);
+  globalTerminal.setColor(VgaText::Color::LIGHT_GREY, VgaText::Color::BLACK);
 
   kprintf("Interrupt number: 0x%x\n", stack->interruptNumber);
   kprintf("Error code: 0x%x\n", stack->errorCode);
@@ -64,7 +69,7 @@ void kernel_exception(struct Kernel_InterruptStack* stack) {
 extern "C"
 void kernel_irq(struct Kernel_InterruptStack* stack) {
   if (stack->interruptNumber == 0x21) {
-    Keyboard_handler();
+    globalKeyboardDriver->handleIrq();
   }
 }
 
@@ -76,26 +81,26 @@ void kprintf(const char* format, ...) {
   String_vprintf(str, format, args);
   va_end(args);
 
-  Terminal_print(str);
+  globalTerminal.print(str);
 }
 
 static void logMemory() {
   const uint64_t kernelStart = (uintptr_t) &_kernel_start;
   const uint64_t kernelEnd = (uintptr_t) &_kernel_end;
 
-  Terminal_setColor(VgaText_LIGHT_BROWN, VgaText_BLACK);
+  globalTerminal.setColor(VgaText::Color::LIGHT_BROWN, VgaText::Color::BLACK);
   kprintf("Kernel start: 0x%x\n", kernelStart);
   kprintf("Kernel end:   0x%x\n", kernelEnd);
   kprintf("Kernel size:  %d kB\n", (kernelEnd - kernelStart) / 1024);
-  Terminal_setColor(VgaText_LIGHT_GREY, VgaText_BLACK);
+  globalTerminal.setColor(VgaText::Color::LIGHT_GREY, VgaText::Color::BLACK);
 }
 
 static void logRamdisk(uintptr_t ramdiskStart, uintptr_t ramdiskEnd) {
-  Terminal_setColor(VgaText_LIGHT_BROWN, VgaText_BLACK);
+  globalTerminal.setColor(VgaText::Color::LIGHT_BROWN, VgaText::Color::BLACK);
   kprintf("Ramdisk start: 0x%x\n", ramdiskStart);
   kprintf("Ramdisk end:   0x%x\n", ramdiskEnd);
   kprintf("Ramdisk size:  %d B\n", ramdiskEnd - ramdiskStart);
-  Terminal_setColor(VgaText_LIGHT_GREY, VgaText_BLACK);
+  globalTerminal.setColor(VgaText::Color::LIGHT_GREY, VgaText::Color::BLACK);
 }
 
 static void findRamdisk(void* multibootInfo, uintptr_t* ramdiskStart, uintptr_t* ramdiskEnd) {
