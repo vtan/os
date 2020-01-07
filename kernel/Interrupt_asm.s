@@ -139,7 +139,7 @@ generic_exception_handler:
   pushall
   mov rdi, rsp
   cld
-  call Interrupt_genericExceptionHandler
+  call kernel_exception
   popall
   add rsp, 16
   jmp halt
@@ -149,7 +149,7 @@ generic_irq_handler:
   pushall
   mov rdi, rsp
   cld
-  call Interrupt_genericIrqHandler
+  call kernel_irq
   popall
   add rsp, 16
   iretq
