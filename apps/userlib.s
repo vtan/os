@@ -6,3 +6,8 @@ _start:
   mov rdi, 0
   mov rsi, rax
   syscall
+
+.global syscall
+syscall:
+  syscall
+  ret

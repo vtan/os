@@ -34,4 +34,13 @@ syscall_entry:
   push rsi  # Syscall argument
   pushall   # Callee-saved registers
   mov rdi, rsp
-  jmp kernel_syscall
+  call kernel_syscall
+syscall_return:
+  popall
+  add rsp, 2 * 8  # Pop syscall number & argument
+  pop rcx
+  pop r11
+  or r11, 0x200   # Enable interrupts on sysret
+  cli
+  pop rsp
+  sysretq

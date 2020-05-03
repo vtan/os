@@ -75,15 +75,19 @@ void kernel_irq(InterruptFrame* frame) {
 }
 
 extern "C"
-void kernel_syscall(SyscallFrame* frame) {
+uint64_t kernel_syscall(SyscallFrame* frame) {
   kprintf("Entering syscall handler, stack: 0x%x, return rsp: 0x%x, return rip: 0x%x\n", frame, frame->rsp, frame->rip);
   switch (frame->syscallNumber) {
     case 0:
       kprintf("Process exited, return value: 0x%x\n", frame->syscallArg);
       while(1) { __asm__("hlt"); }
+    case 0x100:
+      kprintf("Process output: 0x%x\n", frame->syscallArg);
+      return 0;
     default:
       kprintf("panic: Unknown syscall number %d\n", frame->syscallNumber);
       panic();
+      return 0;
   }
 }
 
