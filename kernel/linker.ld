@@ -16,7 +16,7 @@ SECTIONS
   .text ALIGN(4K) : AT(ADDR(.text) - KERNEL_MEMORY_OFFSET)
   {
     *(.multiboot)
-    *(.text)
+    *(.text.*)
     *(.init)
     *(.fini)
     *(.ctors)
@@ -26,20 +26,20 @@ SECTIONS
   /* Read-only data. */
   .rodata ALIGN(4K) : AT(ADDR(.rodata) - KERNEL_MEMORY_OFFSET)
   {
-    *(.rodata)
+    *(.rodata.*)
   }
 
   /* Read-write data (initialized) */
   .data ALIGN(4K) : AT(ADDR(.data) - KERNEL_MEMORY_OFFSET)
   {
-    *(.data)
+    *(.data.*)
   }
 
   /* Read-write data (uninitialized) and stack */
   .bss ALIGN(4K) : AT(ADDR(.bss) - KERNEL_MEMORY_OFFSET)
   {
     *(COMMON)
-    *(.bss)
+    *(.bss.*)
   }
   _kernel_end = .;
 
