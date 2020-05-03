@@ -24,18 +24,18 @@ ALL_OBJS := $(CRTI_OBJ) $(OBJS) $(CRTN_OBJ)
 
 APPS := apps/first.elf
 
-all: $(KERNEL_BIN)
+all: $(KERNEL_BIN) $(APPS)
 
 iso: $(ISO)
 
 $(KERNEL_BIN): kernel/linker.ld  $(OBJ_LINK_LIST)
 	$(CC) -T $< -o $@ $(LDFLAGS) $(LDLIBS) $(OBJ_LINK_LIST)
 
-apps/%.elf: apps/%.o
-	$(CC) -o $@ $(LDFLAGS) $(LDLIBS) $<
+apps/%.elf: apps/%.o apps/userlib.o
+	$(CC) -o $@ $(LDFLAGS) $(LDLIBS) $^
 
 clean:
-	rm -rf iso $(ISO) $(KERNEL_BIN) $(ALL_OBJS) $(APPS)
+	rm -rf iso $(ISO) $(KERNEL_BIN) $(ALL_OBJS) $(APPS) apps/userlib.o
 
 $(ISO): $(KERNEL_BIN) $(APPS) grub.cfg
 	mkdir -p iso/boot/grub
@@ -48,3 +48,6 @@ QEMU_ARGS := $(QEMU_ARGS) -no-reboot -cdrom $(ISO)
 
 run: $(ISO)
 	qemu-system-x86_64 $(QEMU_ARGS)
+
+run-bochs: $(ISO)
+	bochs -q

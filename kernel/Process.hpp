@@ -2,7 +2,8 @@
 
 struct Process {
   uintptr_t entryPoint;
-  uintptr_t stackTop;
+  uintptr_t userStackPointer;
+  uintptr_t kernelStackPointer;
 };
 
 class ProcessLoader {

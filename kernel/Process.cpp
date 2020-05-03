@@ -30,16 +30,18 @@ void ProcessLoader::load(void* elf, struct Process* process) {
 
   PageDirectory pageDirectory = this->pageDirectoryManager.create();
   void* segmentPage = this->pageAllocator.allocate();
-  void* stackPage = this->pageAllocator.allocate();
+  // TODO: doesn't map the kernel stack page, assumes it's in the already mapped superpage
+  void *kernelStackPage = this->pageAllocator.allocate();
+  void* userStackPage = this->pageAllocator.allocate();
   this->pageDirectoryManager.addMapping(
     segment->virtualAddress,
     (uintptr_t) segmentPage - KERNEL_MEMORY_OFFSET,
     pageDirectory
   );
-  uintptr_t stackBottom = segment->virtualAddress + PAGE_SIZE;
+  uintptr_t userStackBottom = segment->virtualAddress + PAGE_SIZE;
   this->pageDirectoryManager.addMapping(
-    stackBottom,
-    (uintptr_t) stackPage - KERNEL_MEMORY_OFFSET,
+    userStackBottom,
+    (uintptr_t) userStackPage - KERNEL_MEMORY_OFFSET,
     pageDirectory
   );
   pageDirectory.use();
@@ -52,7 +54,8 @@ void ProcessLoader::load(void* elf, struct Process* process) {
   );
 
   process->entryPoint = header->entryPoint;
-  process->stackTop = stackBottom + PAGE_SIZE - 16;
+  process->userStackPointer = userStackBottom + PAGE_SIZE - 16; // 16-byte stack alignment
+  process->kernelStackPointer = (uintptr_t) kernelStackPage + PAGE_SIZE - 16;
 }
 
 PRIVATE struct Elf64_SectionHeaderEntry* findTextSection(struct Elf64_Header* header) {

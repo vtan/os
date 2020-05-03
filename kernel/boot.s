@@ -1,6 +1,8 @@
 .intel_syntax noprefix
 
 .set KERNEL_MEMORY_OFFSET, 0xFFFFFF8000000000
+.set STAR, 0xC0000081
+.set LSTAR, 0xC0000082
 
 .section .multiboot
 
@@ -41,6 +43,39 @@ gdt:
   .byte 0b00000000                 # Granularity.
   .byte 0                         # Base (high).
 
+  gdt_user_null_segment = . - gdt
+  .2byte 0xFFFF                    # Limit (low).
+  .2byte 0                         # Base (low).
+  .byte 0                         # Base (middle)
+  .byte 0                         # Access.
+  .byte 1                         # Granularity.
+  .byte 0                         # Base (high).
+
+  gdt_user_data_segment = . - gdt
+  .2byte 0                         # Limit (low).
+  .2byte 0                         # Base (low).
+  .byte 0                         # Base (middle)
+  .byte 0b11110010                 # Access (read/write), ring 3
+  .byte 0b00000000                 # Granularity.
+  .byte 0                         # Base (high).
+
+  gdt_user_code_segment = . - gdt
+  .2byte 0                         # Limit (low).
+  .2byte 0                         # Base (low).
+  .byte 0                         # Base (middle)
+  .byte 0b11111010                 # Access (exec/read), ring 3
+  .byte 0b10101111                 # Granularity, 64 bits flag, limit19:16.
+  .byte 0                         # Base (high).
+
+  gdt_task_state_segment = . - gdt
+  .2byte 0                         # Limit (low).
+  .2byte 0                         # Base (low).
+  .byte 0                         # Base (middle)
+  .byte 0x89
+  .byte 0xA0
+  .byte 0
+  .8byte 0
+
 gdt_pointer:
   .2byte (. - gdt - 1)             # Limit.
   .8byte offset gdt                     # Base.
@@ -63,6 +98,10 @@ kernel_page_table_l2:
   .skip 4096
 kernel_page_table_l1:
   .skip 4096
+.global tss
+tss:
+  .skip 13 * 8
+  tss_size = . - tss
 
 .section .text
 
@@ -70,6 +109,8 @@ kernel_page_table_l1:
 .global _start
 .type _start, @function
 _start:
+  cli
+
   # The kernel will live at 0+2MB in the physical address space
   # and at 0xFFFFFF8000000000+2MB in the virtual address space.
   # We set up two virtual address ranges in the page table hierarchy
@@ -100,7 +141,7 @@ _start:
 
   mov ecx, 0xC0000080          # Set the C-register to 0xC0000080, which is the EFER MSR.
   rdmsr                        # Read from the model-specific register.
-  or eax, 0x100                # Set the LM-bit which is the 9th bit (bit 8).
+  or eax, 0x101                # Set the LM-bit and system call extensions.
   wrmsr                        # Write to the model-specific register.
 
   # Enable paging
@@ -132,15 +173,41 @@ _start64:
   mov gs, ax
   mov ss, ax
 
+  # Filling TSS size and address in GDT
+  mov word ptr [gdt - KERNEL_MEMORY_OFFSET + gdt_task_state_segment], tss_size
+  movabs rax, offset tss
+  mov [gdt - KERNEL_MEMORY_OFFSET + gdt_task_state_segment + 2], ax
+  shr rax, 16
+  mov [gdt - KERNEL_MEMORY_OFFSET + gdt_task_state_segment + 4], al
+  mov [gdt - KERNEL_MEMORY_OFFSET + gdt_task_state_segment + 7], ah
+  shr rax, 16
+  mov [gdt - KERNEL_MEMORY_OFFSET + gdt_task_state_segment + 8], eax
+
   # Disable identity page, flush TLB
   mov qword ptr [kernel_page_table_l4 - KERNEL_MEMORY_OFFSET], 0
   mov rax, cr3
   mov cr3, rax
 
+  # Setting up registers for syscall & sysret
+  mov ecx, STAR
+  rdmsr
+  mov dx, gdt_user_null_segment
+  shl edx, 16
+  mov dx, gdt_code_segment
+  wrmsr
+  mov ecx, LSTAR
+  movabs rax, offset syscall_entry
+  mov rdx, rax
+  shr rdx, 32
+  wrmsr
+
   movabs rsp, offset stack_top
 
   movabs rax, offset gdt_pointer
   lgdt [rax]
+
+  mov ax, gdt_task_state_segment
+  ltr ax
 
   call idt_fill
   movabs rax, offset idt_pointer
@@ -162,3 +229,9 @@ _start64:
 halt:
   hlt
   jmp halt
+
+syscall_entry:
+  # Restoring the stack we saved when we switched to the process.
+  mov rsp, rbx
+  pop rbp
+  ret
