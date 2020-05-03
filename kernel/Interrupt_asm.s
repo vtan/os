@@ -142,8 +142,7 @@ generic_exception_handler:
   call kernel_exception
   popall
   add rsp, 16
-  jmp halt
-  # iretq
+  jmp panic
 
 generic_irq_handler:
   pushall

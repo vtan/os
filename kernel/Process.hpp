@@ -1,10 +1,12 @@
 #pragma once
 
 struct Process {
+  uintptr_t kernelStackPointer;
   uintptr_t entryPoint;
   uintptr_t userStackPointer;
-  uintptr_t kernelStackPointer;
 };
+
+inline Process* runningProcess;
 
 class ProcessLoader {
   PageAllocator& pageAllocator;
@@ -17,4 +19,4 @@ public:
   void load(void* elf, Process*);
 };
 
-extern "C" uint64_t Process_run(struct Process*);
+extern "C" void Process_run(Process*);

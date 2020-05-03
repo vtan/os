@@ -2,7 +2,6 @@
 
 #include "kernel.hpp"
 
-extern "C" uint64_t* kernel_page_table_l4;
 extern "C" void PageDirectory_use(uint64_t* physicalL4Table);
 
 struct PageDirectory {
@@ -10,9 +9,6 @@ struct PageDirectory {
 
   inline void use() const { PageDirectory_use((uint64_t*) ((uintptr_t) this->l4Table - KERNEL_MEMORY_OFFSET)); }
 };
-
-const PageDirectory KERNEL_PAGE_DIRECTORY =
-  PageDirectory{ .l4Table = (uint64_t*) &kernel_page_table_l4 };
 
 class PageAllocator;
 

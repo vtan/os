@@ -4,13 +4,13 @@ CC := $(TARGET)-gcc
 CXX := $(TARGET)-gcc
 
 CFLAGS := -std=c11 -ffreestanding -Wall -Wextra -mcmodel=large -mno-red-zone -mno-mmx -mno-sse -mno-sse2
-CXXFLAGS := -std=c++11 -ffreestanding -fno-exceptions -fno-rtti -Wall -Wextra -mcmodel=large -mno-red-zone -mno-mmx -mno-sse -mno-sse2
+CXXFLAGS := -std=c++17 -ffreestanding -fno-exceptions -fno-rtti -Wall -Wextra -mcmodel=large -mno-red-zone -mno-mmx -mno-sse -mno-sse2
 LDFLAGS := -ffreestanding -z max-page-size=0x1000
 LDLIBS := -nostdlib -lgcc
 
 KERNEL_BIN := kernel.bin
 ISO := os.iso
-OBJS := kernel/boot.o kernel/kernel.o kernel/Interrupt_asm.o \
+OBJS := kernel/boot.o kernel/kernel.o kernel/syscall.o kernel/Interrupt_asm.o \
 	kernel/Keyboard.o kernel/PageAlloc.o kernel/PageDirectory.o kernel/PageDirectory_asm.o \
 	kernel/Pic.o kernel/Port.o kernel/Process.o kernel/Process_asm.o kernel/String.o kernel/Terminal.o kernel/VgaText.o
 

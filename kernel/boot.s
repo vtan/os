@@ -224,14 +224,9 @@ _start64:
   call kernel_main
   call _fini
 
+.global panic
+panic:
   cli
-.global halt
 halt:
   hlt
   jmp halt
-
-syscall_entry:
-  # Restoring the stack we saved when we switched to the process.
-  mov rsp, rbx
-  pop rbp
-  ret

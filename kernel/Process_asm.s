@@ -2,15 +2,11 @@
 
 .global Process_run
 Process_run:
-  # Currently the only syscall is done when exiting the user process,
-  # we save the current stack pointer here and restore it in the syscall handler.
-  push rbp
-  mov rbx, rsp
-
-  mov rcx, [rdi]        # Entry point
-  mov rbp, [rdi + 8]    # User stack pointer
-  mov rax, [rdi + 16]
+  mov rax, [rdi]
   movabs [tss + 4], rax    # Putting kernel stack pointer in TSS.RSP0
+
+  mov rcx, [rdi + 8]     # Entry point
+  mov rbp, [rdi + 16]    # User stack pointer
 
   mov rsp, rbp          # Setting up stack for process
   mov r11, 0x0202

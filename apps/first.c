@@ -1,5 +1,4 @@
 int main() {
-  while (1) {}
   int n = f(2);
   int x = 0;
   for (int i = 0; i <= n; ++i) {

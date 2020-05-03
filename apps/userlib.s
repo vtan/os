@@ -3,4 +3,6 @@
 .global _start
 _start:
   call main
+  mov rdi, 0
+  mov rsi, rax
   syscall

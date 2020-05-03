@@ -43,14 +43,13 @@ void kernel_main(void* multibootInfo)
   findRamdisk(multibootInfo, &ramdiskStart, &ramdiskEnd);
   logRamdisk(ramdiskStart, ramdiskEnd);
 
-  struct Process process = { 0 };
+  Process process = { 0 };
   processLoader.load((void*) ramdiskStart, &process);
   kprintf("Process entry point:          0x%x\n", process.entryPoint);
   kprintf("Process user stack pointer:   0x%x\n", process.userStackPointer);
   kprintf("Process kernel stack pointer: 0x%x\n", process.kernelStackPointer);
-  uint64_t result = Process_run(&process);
-  KERNEL_PAGE_DIRECTORY.use();
-  kprintf("Process result: %d\n", result);
+  runningProcess = &process;
+  Process_run(&process);
 
   while(1) {
     __asm__("hlt");
@@ -58,20 +57,33 @@ void kernel_main(void* multibootInfo)
 }
 
 extern "C"
-void kernel_exception(struct Kernel_InterruptStack* stack) {
+void kernel_exception(InterruptFrame* frame) {
   globalTerminal.setColor(VgaText::Color::LIGHT_RED, VgaText::Color::BLACK);
   kprintf("Exception, halting\n");
   globalTerminal.setColor(VgaText::Color::LIGHT_GREY, VgaText::Color::BLACK);
 
-  kprintf("Interrupt number: 0x%x\n", stack->interruptNumber);
-  kprintf("Error code: 0x%x\n", stack->errorCode);
+  kprintf("Interrupt number: 0x%x\n", frame->interruptNumber);
+  kprintf("Error code: 0x%x\n", frame->errorCode);
 }
 
 extern "C"
-void kernel_irq(struct Kernel_InterruptStack* stack) {
-  // kprintf("Entering interrupt handler, stack: 0x%x, return rsp: 0x%x\n", stack, stack->rsp);
-  if (stack->interruptNumber == 0x21) {
+void kernel_irq(InterruptFrame* frame) {
+  // kprintf("Entering interrupt handler, stack: 0x%x, return rsp: 0x%x\n", frame, frame->rsp);
+  if (frame->interruptNumber == 0x21) {
     globalKeyboardDriver->handleIrq();
+  }
+}
+
+extern "C"
+void kernel_syscall(SyscallFrame* frame) {
+  kprintf("Entering syscall handler, stack: 0x%x, return rsp: 0x%x, return rip: 0x%x\n", frame, frame->rsp, frame->rip);
+  switch (frame->syscallNumber) {
+    case 0:
+      kprintf("Process exited, return value: 0x%x\n", frame->syscallArg);
+      while(1) { __asm__("hlt"); }
+    default:
+      kprintf("panic: Unknown syscall number %d\n", frame->syscallNumber);
+      panic();
   }
 }
 
