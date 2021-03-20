@@ -5,6 +5,7 @@
 #include "PageDirectory.hpp"
 #include "Pic.hpp"
 #include "Process.hpp"
+#include "SerialDevice.hpp"
 #include "String.hpp"
 #include "Terminal.hpp"
 #include "VgaText.hpp"
@@ -21,7 +22,8 @@ static void logRamdisk(uintptr_t ramdiskStart, uintptr_t ramdiskEnd);
 static void findRamdisk(void* multibootInfo, uintptr_t* ramdiskStart, uintptr_t* ramdiskEnd);
 
 
-static Keyboard* globalKeyboardDriver;
+static Keyboard* globalKeyboardDriver = nullptr;
+static SerialDevice* globalSerialDevice = nullptr;
 
 static VgaText globalVgaText;
 static Terminal globalTerminal(globalVgaText);
@@ -35,7 +37,10 @@ void kernel_main(void* multibootInfo)
   PageAllocator pageAllocator((void*) KERNEL_MEMORY_OFFSET + MBYTES(1) + KBYTES(512));
   PageDirectoryManager pageDirectoryManager(pageAllocator);
   ProcessLoader processLoader(pageAllocator, pageDirectoryManager);
+
   Pic_init(); // TODO do this before enabling interrupts
+  SerialDevice serialDevice;
+  globalSerialDevice = &serialDevice;
   Keyboard keyboardDriver(globalTerminal);
   globalKeyboardDriver = &keyboardDriver;
 
@@ -101,6 +106,9 @@ void kprintf(const char* format, ...) {
   String_vprintf(str, format, args);
   va_end(args);
 
+  if (globalSerialDevice) {
+    globalSerialDevice->writeString(str);
+  }
   globalTerminal.print(str);
 }
 

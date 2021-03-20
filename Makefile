@@ -29,7 +29,7 @@ $(ISO): kernel apps grub.cfg
 	touch iso/boot/initrd
 	grub-mkrescue -o $(ISO) iso 2> /dev/null
 
-QEMU_ARGS := $(QEMU_ARGS) -no-reboot -cdrom $(ISO)
+QEMU_ARGS := $(QEMU_ARGS) -serial stdio -no-reboot -cdrom $(ISO)
 
 run: $(ISO)
 	qemu-system-x86_64 $(QEMU_ARGS)
