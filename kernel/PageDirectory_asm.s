@@ -1,8 +1,6 @@
-.intel_syntax noprefix
+section .text
 
-.section .text
-
-.global PageDirectory_use
+global PageDirectory_use
 PageDirectory_use:
   mov cr3, rdi
   ret

@@ -1,12 +1,17 @@
 #pragma once
 
+#include "kernel.hpp"
+
+#include "PageAlloc.hpp"
+#include "PageDirectory.hpp"
+
 struct Process {
   uintptr_t kernelStackPointer;
   uintptr_t entryPoint;
   uintptr_t userStackPointer;
 };
 
-inline Process* runningProcess;
+extern Process* runningProcess;
 
 class ProcessLoader {
   PageAllocator& pageAllocator;

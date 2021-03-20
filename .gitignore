@@ -1,5 +1,7 @@
+*.d
 *.o
 *.elf
 kernel.bin
 os.iso
 iso/
+toolchain/

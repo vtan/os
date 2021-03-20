@@ -1,6 +1,6 @@
-.intel_syntax noprefix
+section .text
 
-.macro pushall
+%macro pushall 0
   push rbx
   push rbp
   push rdi
@@ -9,9 +9,9 @@
   push r13
   push r14
   push r15
-.endm
+%endm
 
-.macro popall
+%macro popall 0
   pop r15
   pop r14
   pop r13
@@ -20,27 +20,29 @@
   pop rdi
   pop rbp
   pop rbx
-.endm
+%endm
 
-.global syscall_entry
+global syscall_entry
 syscall_entry:
   mov rdx, rsp
-  movabs rax, [runningProcess]  # Switching to kernel stack
+  extern runningProcess
+  mov rax, [runningProcess]  ; Switching to kernel stack
   mov rsp, [rax]
-  push rdx  # RSP before syscall
-  push r11  # RFLAGS before syscall
-  push rcx  # RIP before syscall
-  push rdi  # Syscall number
-  push rsi  # Syscall argument
-  pushall   # Callee-saved registers
+  push rdx  ; RSP before syscall
+  push r11  ; RFLAGS before syscall
+  push rcx  ; RIP before syscall
+  push rdi  ; Syscall number
+  push rsi  ; Syscall argument
+  pushall   ; Callee-saved registers
   mov rdi, rsp
+  extern kernel_syscall
   call kernel_syscall
 syscall_return:
   popall
-  add rsp, 2 * 8  # Pop syscall number & argument
+  add rsp, 2 * 8  ; Pop syscall number & argument
   pop rcx
   pop r11
-  or r11, 0x200   # Enable interrupts on sysret
+  or r11, 0x200   ; Enable interrupts on sysret
   cli
   pop rsp
-  sysretq
+  o64 sysret

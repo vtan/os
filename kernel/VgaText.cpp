@@ -11,13 +11,13 @@ VgaText::VgaText() {
   const uint8_t scanlineEnd = 0xF;
 
   // Enable cursor
-  Port_out(0x3D4, cursorStartRegister);
-  const uint8_t startLine = (Port_in(0x3D5) & 0xC0) | scanlineStart;
-  Port_out(0x3D5, startLine);
+  port_out8(0x3D4, cursorStartRegister);
+  const uint8_t startLine = (port_in8(0x3D5) & 0xC0) | scanlineStart;
+  port_out8(0x3D5, startLine);
 
-  Port_out(0x3D4, cursorEndRegister);
-  const uint8_t endLine = (Port_in(0x3D5) & 0xE0) | scanlineEnd;
-  Port_out(0x3D5, endLine);
+  port_out8(0x3D4, cursorEndRegister);
+  const uint8_t endLine = (port_in8(0x3D5) & 0xE0) | scanlineEnd;
+  port_out8(0x3D5, endLine);
 }
 
 void VgaText::put(size_t offset, uint8_t attributes, uint8_t character) {
@@ -41,10 +41,10 @@ void VgaText::scrollUp() {
 
 void VgaText::moveCursor(size_t offset) {
   if (offset < VgaText::SCREEN_SIZE) {
-    Port_out(0x3D4, 0x0F);
-    Port_out(0x3D5, offset & 0xFF);
+    port_out8(0x3D4, 0x0F);
+    port_out8(0x3D5, offset & 0xFF);
 
-    Port_out(0x3D4, 0x0E);
-    Port_out(0x3D5, (offset >> 8) & 0xFF);
+    port_out8(0x3D4, 0x0E);
+    port_out8(0x3D5, (offset >> 8) & 0xFF);
   }
 }

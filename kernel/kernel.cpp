@@ -26,6 +26,8 @@ static Keyboard* globalKeyboardDriver;
 static VgaText globalVgaText;
 static Terminal globalTerminal(globalVgaText);
 
+Process* runningProcess;
+
 extern "C"
 void kernel_main(void* multibootInfo)
 {
@@ -33,7 +35,7 @@ void kernel_main(void* multibootInfo)
   PageAllocator pageAllocator((void*) KERNEL_MEMORY_OFFSET + MBYTES(1) + KBYTES(512));
   PageDirectoryManager pageDirectoryManager(pageAllocator);
   ProcessLoader processLoader(pageAllocator, pageDirectoryManager);
-  Pic_init();
+  Pic_init(); // TODO do this before enabling interrupts
   Keyboard keyboardDriver(globalTerminal);
   globalKeyboardDriver = &keyboardDriver;
 
@@ -86,7 +88,7 @@ uint64_t kernel_syscall(SyscallFrame* frame) {
       return 0;
     default:
       kprintf("panic: Unknown syscall number %d\n", frame->syscallNumber);
-      panic();
+      kernel_halt();
       return 0;
   }
 }

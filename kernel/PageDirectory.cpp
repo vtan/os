@@ -13,7 +13,7 @@
 #define PAGE_WRITABLE (1 << 1)
 #define PAGE_USER (1 << 2)
 
-extern void* kernel_page_table_l3;
+extern void* kernelPageTableL3;
 
 PageDirectory PageDirectoryManager::create() {
   PageDirectory directory;
@@ -21,7 +21,7 @@ PageDirectory PageDirectoryManager::create() {
   memset((uint8_t*) directory.l4Table, 0, 511 * sizeof(uint64_t));
 
   const uintptr_t kernelL3Flags = PAGE_PRESENT | PAGE_WRITABLE; // TODO writable is temporary
-  directory.l4Table[511] = PAGE_BASE_TO_TABLE_ENTRY(&kernel_page_table_l3) | kernelL3Flags;
+  directory.l4Table[511] = PAGE_BASE_TO_TABLE_ENTRY(&kernelPageTableL3) | kernelL3Flags;
 
   return directory;
 }

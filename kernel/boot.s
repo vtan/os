@@ -1,232 +1,224 @@
-.intel_syntax noprefix
+KERNEL_VIRTUAL_OFFSET equ 0xFFFFFFFF80000000
 
-.set KERNEL_MEMORY_OFFSET, 0xFFFFFF8000000000
-.set STAR, 0xC0000081
-.set LSTAR, 0xC0000082
+STAR equ 0xC0000081
+LSTAR equ 0xC0000082
 
-.section .multiboot
+section .multiboot
+align 4
+  dd 0xe85250d6                ; magic number (multiboot 2)
+  dd 0                         ; architecture 0 (protected mode i386)
+  dd 96                        ; header length
+  dd 0x100000000 - (0xe85250d6 + 0 + 96)  ; checksum
+  dw 0    ; type
+  dw 0    ; flags
+  dd 8    ; size
 
-.align 4
-.4byte 0xe85250d6                # magic number (multiboot 2)
-.4byte 0                         # architecture 0 (protected mode i386)
-.4byte 96                        # header length
-# checksum
-.4byte 0x100000000 - (0xe85250d6 + 0 + 96)
-.2byte 0    # type
-.2byte 0    # flags
-.4byte 8    # size
-
-.section .data
+section .data
 
 gdt:
-  gdt_null_segment = . - gdt
-  .2byte 0xFFFF                    # Limit (low).
-  .2byte 0                         # Base (low).
-  .byte 0                         # Base (middle)
-  .byte 0                         # Access.
-  .byte 1                         # Granularity.
-  .byte 0                         # Base (high).
+  GDT_NULL_SEGMENT equ $ - gdt
+  dw 0xFFFF                    ; Limit (low).
+  dw 0                         ; Base (low).
+  db 0                         ; Base (middle)
+  db 0                         ; Access.
+  db 1                         ; Granularity.
+  db 0                         ; Base (high).
 
-  gdt_code_segment = . - gdt
-  .2byte 0                         # Limit (low).
-  .2byte 0                         # Base (low).
-  .byte 0                         # Base (middle)
-  .byte 0b10011010                 # Access (exec/read).
-  .byte 0b10101111                 # Granularity, 64 bits flag, limit19:16.
-  .byte 0                         # Base (high).
+  GDT_CODE_SEGMENT equ $ - gdt
+  dw 0                         ; Limit (low).
+  dw 0                         ; Base (low).
+  db 0                         ; Base (middle)
+  db 0b10011010                ; Access (exec/read).
+  db 0b10101111                ; Granularity, 64 bits flag, limit19:16.
+  db 0                         ; Base (high).
 
-  gdt_data_segment = . - gdt
-  .2byte 0                         # Limit (low).
-  .2byte 0                         # Base (low).
-  .byte 0                         # Base (middle)
-  .byte 0b10010010                 # Access (read/write).
-  .byte 0b00000000                 # Granularity.
-  .byte 0                         # Base (high).
+  GDT_DATA_SEGMENT equ $ - gdt
+  dw 0                         ; Limit (low).
+  dw 0                         ; Base (low).
+  db 0                         ; Base (middle)
+  db 0b10010010                ; Access (read/write).
+  db 0b00000000                ; Granularity.
+  db 0                         ; Base (high).
 
-  gdt_user_null_segment = . - gdt
-  .2byte 0xFFFF                    # Limit (low).
-  .2byte 0                         # Base (low).
-  .byte 0                         # Base (middle)
-  .byte 0                         # Access.
-  .byte 1                         # Granularity.
-  .byte 0                         # Base (high).
+  GDT_USER_NULL_SEGMENT equ $ - gdt
+  dw 0xFFFF                    ; Limit (low).
+  dw 0                         ; Base (low).
+  db 0                         ; Base (middle)
+  db 0                         ; Access.
+  db 1                         ; Granularity.
+  db 0                         ; Base (high).
 
-  gdt_user_data_segment = . - gdt
-  .2byte 0                         # Limit (low).
-  .2byte 0                         # Base (low).
-  .byte 0                         # Base (middle)
-  .byte 0b11110010                 # Access (read/write), ring 3
-  .byte 0b00000000                 # Granularity.
-  .byte 0                         # Base (high).
+  GDT_USER_DATA_SEGMENT equ $ - gdt
+  dw 0                         ; Limit (low).
+  dw 0                         ; Base (low).
+  db 0                         ; Base (middle)
+  db 0b11110010                ; Access (read/write), ring 3
+  db 0b00000000                ; Granularity.
+  db 0                         ; Base (high).
 
-  gdt_user_code_segment = . - gdt
-  .2byte 0                         # Limit (low).
-  .2byte 0                         # Base (low).
-  .byte 0                         # Base (middle)
-  .byte 0b11111010                 # Access (exec/read), ring 3
-  .byte 0b10101111                 # Granularity, 64 bits flag, limit19:16.
-  .byte 0                         # Base (high).
+  GDT_USER_CODE_SEGMENT equ $ - gdt
+  dw 0                         ; Limit (low).
+  dw 0                         ; Base (low).
+  db 0                         ; Base (middle)
+  db 0b11111010                ; Access (exec/read), ring 3
+  db 0b10101111                ; Granularity, 64 bits flag, limit19:16.
+  db 0                         ; Base (high).
 
-  gdt_task_state_segment = . - gdt
-  .2byte 0                         # Limit (low).
-  .2byte 0                         # Base (low).
-  .byte 0                         # Base (middle)
-  .byte 0x89
-  .byte 0xA0
-  .byte 0
-  .8byte 0
+  GDT_TASK_STATE_SEGMENT equ $ - gdt
+  dw 0                         ; Limit (low).
+  dw 0                         ; Base (low).
+  db 0                         ; Base (middle)
+  db 0x89
+  db 0xA0
+  db 0
+  dq 0
 
-gdt_pointer:
-  .2byte (. - gdt - 1)             # Limit.
-  .8byte offset gdt                     # Base.
+gdtPointer:
+  dw ($ - gdt - 1)               ; Limit
+  dq (gdt - KERNEL_VIRTUAL_OFFSET)  ; Base
 
-.section .bss
+section .bss
 
-.align 16
-stack_bottom:
-  .skip 16384 # 16 KiB
-stack_top:
+align 4096
 
-.align 4096
-.global kernel_page_table_l4
-kernel_page_table_l4:
-  .skip 4096
-.global kernel_page_table_l3
-kernel_page_table_l3:
-  .skip 4096
-kernel_page_table_l2:
-  .skip 4096
-kernel_page_table_l1:
-  .skip 4096
-.global tss
-tss:
-  .skip 13 * 8
-  tss_size = . - tss
+kernelPageTableL4:
+  resq 512
+global kernelPageTableL3
+kernelPageTableL3:
+  resq 512
+kernelPageTableL2:
+  resq 512
 
-.section .text
+align 16
+kernelStackBottom:
+  resb (16 * 1024)
+kernelStackTop:
 
-.code32
-.global _start
-.type _start, @function
+global taskStateSegment
+taskStateSegment:
+  resb 13 * 8
+  TSS_SIZE equ $ - taskStateSegment
+
+section .text
+
+bits 32
+global _start
 _start:
   cli
 
-  # The kernel will live at 0+2MB in the physical address space
-  # and at 0xFFFFFF8000000000+2MB in the virtual address space.
-  # We set up two virtual address ranges in the page table hierarchy
-  # pointing to this physical range:
-  # - L4 entry 511, mapping the virtual space to the physical,
-  # - L4 entry 0, mapping the physical space to itself temporarily,
-  #   so we don't get a page fault while we're executing code here.
-  # Both entries point to L3[0], which points to L2[0], which is a large (2MB) page itself.
+  ; Set up page mapping for temporary identity mapping (first 2 MB)
+  ; and statically allocated kernel memory (-2 GB to -2 GB + 2 MB).
+  mov dword [kernelPageTableL4 - KERNEL_VIRTUAL_OFFSET], (kernelPageTableL3 - KERNEL_VIRTUAL_OFFSET) + 0x03
+  mov dword [kernelPageTableL4 - KERNEL_VIRTUAL_OFFSET + 511 * 8], (kernelPageTableL3 - KERNEL_VIRTUAL_OFFSET) + 0x03
+  mov dword [kernelPageTableL3 - KERNEL_VIRTUAL_OFFSET], (kernelPageTableL2 - KERNEL_VIRTUAL_OFFSET) + 0x03
+  mov dword [kernelPageTableL3 - KERNEL_VIRTUAL_OFFSET + 510 * 8], (kernelPageTableL2 - KERNEL_VIRTUAL_OFFSET) + 0x03
+  mov dword [kernelPageTableL2 - KERNEL_VIRTUAL_OFFSET], 0x83
 
-  mov eax, offset (kernel_page_table_l3 - KERNEL_MEMORY_OFFSET)
-  or eax, 0x03
-  mov dword ptr [kernel_page_table_l4 - KERNEL_MEMORY_OFFSET], eax           # Link to L3 from 0 for identity page
-  mov dword ptr [kernel_page_table_l4 - KERNEL_MEMORY_OFFSET + 8 * 511], eax # Link to L3 from FFFFFF8000000000
-
-  mov eax, offset (kernel_page_table_l2 - KERNEL_MEMORY_OFFSET)
-  or eax, 0x03
-  mov dword ptr [kernel_page_table_l3 - KERNEL_MEMORY_OFFSET], eax
-
-  mov dword ptr [kernel_page_table_l2 - KERNEL_MEMORY_OFFSET], 0x83 # 2MB page
-
-  mov edi, offset (kernel_page_table_l4 - KERNEL_MEMORY_OFFSET)
+  mov edi, (kernelPageTableL4 - KERNEL_VIRTUAL_OFFSET)
   mov cr3, edi
 
-  # Enable PAE and PSE
+  ; Enable PAE and PSE
   mov eax, cr4
-  or eax, 0b00110000
+  or eax, 0b0011_0000
   mov cr4, eax
 
-  mov ecx, 0xC0000080          # Set the C-register to 0xC0000080, which is the EFER MSR.
-  rdmsr                        # Read from the model-specific register.
-  or eax, 0x101                # Set the LM-bit and system call extensions.
-  wrmsr                        # Write to the model-specific register.
+  mov ecx, 0xC000_0080         ; Set the C-register to 0xC0000080, which is the EFER MSR.
+  rdmsr                        ; Read from the model-specific register.
+  or eax, 0x101                ; Set the LM-bit and system call extensions.
+  wrmsr                        ; Write to the model-specific register.
 
-  # Enable paging
+  ; Enable paging
   mov eax, cr0
   or eax, 1 << 31
   mov cr0, eax
 
-  # Using physical address of GDTR because we're still in 32-bit mode.
-  # We'll need to switch to the 64-bit virtual address before disabling the identity page.
-  lgdt [gdt_pointer - KERNEL_MEMORY_OFFSET]
-  jmp gdt_code_segment:(_start64_physical - KERNEL_MEMORY_OFFSET)
+  lgdt [gdtPointer - KERNEL_VIRTUAL_OFFSET]
+  jmp GDT_CODE_SEGMENT:(_start64_physical - KERNEL_VIRTUAL_OFFSET)
 
-.code64
-.global _start64_physical
-.type _start64_physical, @function
+bits 64
 _start64_physical:
-  # We're still executing code from the physical address range,
-  # let's jump to the virtual address.
-  movabs rax, offset _start64
+  mov rax, _start64
   jmp rax
-
-.global _start64
-.type _start64, @function
 _start64:
-  mov ax, gdt_data_segment
+  mov ax, GDT_DATA_SEGMENT
   mov ds, ax
   mov es, ax
   mov fs, ax
   mov gs, ax
   mov ss, ax
 
-  # Filling TSS size and address in GDT
-  mov word ptr [gdt - KERNEL_MEMORY_OFFSET + gdt_task_state_segment], tss_size
-  movabs rax, offset tss
-  mov [gdt - KERNEL_MEMORY_OFFSET + gdt_task_state_segment + 2], ax
+  ; Filling TSS size and address in GDT
+  mov word [gdt - KERNEL_VIRTUAL_OFFSET + GDT_TASK_STATE_SEGMENT], TSS_SIZE
+  mov rax, taskStateSegment
+  mov [gdt - KERNEL_VIRTUAL_OFFSET + GDT_TASK_STATE_SEGMENT + 2], ax
   shr rax, 16
-  mov [gdt - KERNEL_MEMORY_OFFSET + gdt_task_state_segment + 4], al
-  mov [gdt - KERNEL_MEMORY_OFFSET + gdt_task_state_segment + 7], ah
+  mov [gdt - KERNEL_VIRTUAL_OFFSET + GDT_TASK_STATE_SEGMENT + 4], al
+  mov [gdt - KERNEL_VIRTUAL_OFFSET + GDT_TASK_STATE_SEGMENT + 7], ah
   shr rax, 16
-  mov [gdt - KERNEL_MEMORY_OFFSET + gdt_task_state_segment + 8], eax
+  mov [gdt - KERNEL_VIRTUAL_OFFSET + GDT_TASK_STATE_SEGMENT + 8], eax
 
-  # Disable identity page, flush TLB
-  mov qword ptr [kernel_page_table_l4 - KERNEL_MEMORY_OFFSET], 0
+  ; Map 510 GB of physical memory from -512 GB in 1 GB pages
+  xor rcx, rcx
+  .mapPhysicalMemory:
+    mov rax, rcx
+    shl rax, 30
+    or rax, 0x83
+    mov qword [kernelPageTableL3 - KERNEL_VIRTUAL_OFFSET + 8 * rcx], rax
+    inc rcx
+    cmp rcx, 510
+    jne .mapPhysicalMemory
+  ; Disable identity page
+  mov qword [kernelPageTableL4 - KERNEL_VIRTUAL_OFFSET], 0
+  ; Flush TLB
   mov rax, cr3
   mov cr3, rax
 
-  # Setting up registers for syscall & sysret
+  ; Setting up registers for syscall & sysret
   mov ecx, STAR
   rdmsr
-  mov dx, gdt_user_null_segment
+  mov dx, GDT_USER_NULL_SEGMENT
   shl edx, 16
-  mov dx, gdt_code_segment
+  mov dx, GDT_CODE_SEGMENT
   wrmsr
   mov ecx, LSTAR
-  movabs rax, offset syscall_entry
+  extern syscall_entry
+  mov rax, syscall_entry
   mov rdx, rax
   shr rdx, 32
   wrmsr
 
-  movabs rsp, offset stack_top
-
-  movabs rax, offset gdt_pointer
+  mov qword [gdtPointer + 2], gdt
+  mov rax, gdtPointer
   lgdt [rax]
+  mov rsp, kernelStackTop
 
-  mov ax, gdt_task_state_segment
+  mov ax, GDT_TASK_STATE_SEGMENT
   ltr ax
 
+  extern idt_fill, idt_pointer
   call idt_fill
-  movabs rax, offset idt_pointer
+  mov rax, idt_pointer
   lidt [rax]
-  sti
 
+  ; Run constructors of statically allocated objects
+  extern _init
   call _init
 
-  # The boot loader put the pointer to the multiboot2 information structure
-  # to rbx and we haven't changed it.
-  mov rdi, KERNEL_MEMORY_OFFSET
+  ; The boot loader put the pointer to the multiboot2 information structure
+  ; to rbx and we haven't changed it.
+  mov rdi, KERNEL_VIRTUAL_OFFSET
   add rdi, rbx
 
+  sti
+  extern kernel_main
   call kernel_main
+  ; TODO do we need this?
+  extern _fini
   call _fini
 
-.global panic
-panic:
+global kernel_halt
+kernel_halt:
   cli
-halt:
+.loop:
   hlt
-  jmp halt
+  jmp .loop

@@ -35,12 +35,12 @@ enum Keyboard_Modifier {
 };
 
 Keyboard::Keyboard(Terminal& t) : terminal(t) {
-  uint8_t picInterruptMask = Port_in(Pic_MASTER_DATA);
-  Port_out(Pic_MASTER_DATA, picInterruptMask & 0xFD);
+  uint8_t picInterruptMask = port_in8(Pic_MASTER_DATA);
+  port_out8(Pic_MASTER_DATA, picInterruptMask & 0xFD);
 }
 
 void Keyboard::handleIrq() {
-  const uint8_t scanCode = Port_in(Keyboard_PORT);
+  const uint8_t scanCode = port_in8(Keyboard_PORT);
 
   if (this->ignoreBytes > 0) {
     --this->ignoreBytes;
@@ -67,5 +67,5 @@ void Keyboard::handleIrq() {
     this->terminal.print(str);
   }
 
-  Port_out(Pic_MASTER_COMMAND, Pic_END_OF_INTERRUPT);
+  port_out8(Pic_MASTER_COMMAND, Pic_END_OF_INTERRUPT);
 }

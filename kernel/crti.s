@@ -1,17 +1,13 @@
-# See https://wiki.osdev.org/Calling_Global_Constructors
+; See https://wiki.osdev.org/Calling_Global_Constructors
 
-.intel_syntax noprefix
-
-.section .init
-.global _init
-.type _init, @function
+section .init
+global _init
 _init:
 	push rbp
 	mov rbp, rsp
 
-.section .fini
-.global _fini
-.type _fini, @function
+section .fini
+global _fini
 _fini:
 	push rbp
 	mov rbp, rsp

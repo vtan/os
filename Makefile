@@ -1,47 +1,32 @@
-TARGET := x86_64-elf
-AS := $(TARGET)-as
-CC := $(TARGET)-gcc
-CXX := $(TARGET)-gcc
+export TARGET := x86_64-elf
+export AS := nasm
 
-CFLAGS := -std=c11 -ffreestanding -Wall -Wextra -mcmodel=large -mno-red-zone -mno-mmx -mno-sse -mno-sse2
-CXXFLAGS := -std=c++17 -ffreestanding -fno-exceptions -fno-rtti -Wall -Wextra -mcmodel=large -mno-red-zone -mno-mmx -mno-sse -mno-sse2
-LDFLAGS := -ffreestanding -z max-page-size=0x1000
-LDLIBS := -nostdlib -lgcc
-
-KERNEL_BIN := kernel.bin
+KERNEL_BIN := kernel/kernel.bin
 ISO := os.iso
-OBJS := kernel/boot.o kernel/kernel.o kernel/syscall.o kernel/Interrupt_asm.o \
-	kernel/Keyboard.o kernel/PageAlloc.o kernel/PageDirectory.o kernel/PageDirectory_asm.o \
-	kernel/Pic.o kernel/Port.o kernel/Process.o kernel/Process_asm.o kernel/String.o kernel/Terminal.o kernel/VgaText.o
 
-CRTI_OBJ := kernel/crti.o
-CRTBEGIN_OBJ := $(shell $(CC) $(CFLAGS) -print-file-name=crtbegin.o)
-CRTEND_OBJ := $(shell $(CC) $(CFLAGS) -print-file-name=crtend.o)
-CRTN_OBJ := kernel/crtn.o
+all: kernel apps
 
-OBJ_LINK_LIST := $(CRTI_OBJ) $(CRTBEGIN_OBJ) $(OBJS) $(CRTEND_OBJ) $(CRTN_OBJ)
-ALL_OBJS := $(CRTI_OBJ) $(OBJS) $(CRTN_OBJ)
+.PHONY: kernel
+kernel:
+	$(MAKE) -C kernel
 
-APPS := apps/first.elf
-
-all: $(KERNEL_BIN) $(APPS)
+.PHONY: apps
+apps:
+	$(MAKE) -C apps
 
 iso: $(ISO)
 
-$(KERNEL_BIN): kernel/linker.ld  $(OBJ_LINK_LIST)
-	$(CC) -T $< -o $@ $(LDFLAGS) $(LDLIBS) $(OBJ_LINK_LIST)
-
-apps/%.elf: apps/%.o apps/userlib.o
-	$(CC) -o $@ $(LDFLAGS) $(LDLIBS) $^
-
 clean:
-	rm -rf iso $(ISO) $(KERNEL_BIN) $(ALL_OBJS) $(APPS) apps/userlib.o
+	$(MAKE) -C kernel clean
+	$(MAKE) -C apps clean
+	rm -rf iso $(ISO)
 
-$(ISO): $(KERNEL_BIN) $(APPS) grub.cfg
+$(ISO): kernel apps grub.cfg
 	mkdir -p iso/boot/grub
 	cp grub.cfg iso/boot/grub/grub.cfg
-	cp $(KERNEL_BIN) iso/boot/$(KERNEL_BIN)
+	cp $(KERNEL_BIN) iso/boot/kernel.bin
 	cp apps/first.elf iso/boot/initrd
+	touch iso/boot/initrd
 	grub-mkrescue -o $(ISO) iso 2> /dev/null
 
 QEMU_ARGS := $(QEMU_ARGS) -no-reboot -cdrom $(ISO)

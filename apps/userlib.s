@@ -1,13 +1,14 @@
-.intel_syntax noprefix
+section .text
 
-.global _start
+global _start
 _start:
+  extern main
   call main
   mov rdi, 0
   mov rsi, rax
   syscall
 
-.global syscall
+global syscall
 syscall:
   syscall
   ret
