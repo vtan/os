@@ -11,7 +11,13 @@
 
 #define PAGE_SIZE KBYTES(4)
 
-#define KERNEL_MEMORY_OFFSET 0xFFFFFFFF80000000ul
+// The virtual offset of kernel code and statically allocated memory.
+// These addresses are in the -2 GB to 0 space, so they fit in a signed 32-bit pointer
+// and we can compile the kernel with -mcmodel=kernel.
+#define KERNEL_STATIC_MEMORY_OFFSET 0xFFFF'FFFF'8000'0000ul
+
+// The virtual offset where all of the physical memory is mapped for the kernel.
+#define PHYSICAL_MEMORY_OFFSET      0xFFFF'FF80'0000'0000ul
 
 struct InterruptFrame {
   uint64_t r15, r14, r13, r12, r11, r10, r9, r8;

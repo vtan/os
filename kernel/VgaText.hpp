@@ -3,7 +3,7 @@
 #include "kernel.hpp"
 
 class VgaText {
-  uint16_t* buffer = (uint16_t*) (KERNEL_MEMORY_OFFSET + 0xB8000);
+  uint16_t* buffer = (uint16_t*) (KERNEL_STATIC_MEMORY_OFFSET + 0xB'8000);
 
 public:
   enum class Color : uint8_t {

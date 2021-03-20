@@ -21,7 +21,6 @@ static void logMemory();
 static void logRamdisk(uintptr_t ramdiskStart, uintptr_t ramdiskEnd);
 static void findRamdisk(void* multibootInfo, uintptr_t* ramdiskStart, uintptr_t* ramdiskEnd);
 
-
 static Keyboard* globalKeyboardDriver = nullptr;
 static SerialDevice* globalSerialDevice = nullptr;
 
@@ -33,8 +32,10 @@ Process* runningProcess;
 extern "C"
 void kernel_main(void* multibootInfo)
 {
+  mapPhysicalMemoryToKernel();
+
   // TODO: assumes this is after the ramdisk ends
-  PageAllocator pageAllocator((void*) KERNEL_MEMORY_OFFSET + MBYTES(1) + KBYTES(512));
+  PageAllocator pageAllocator((void*) KERNEL_STATIC_MEMORY_OFFSET + MBYTES(1) + KBYTES(512));
   PageDirectoryManager pageDirectoryManager(pageAllocator);
   ProcessLoader processLoader(pageAllocator, pageDirectoryManager);
 
@@ -147,8 +148,8 @@ static void findRamdisk(void* multibootInfo, uintptr_t* ramdiskStart, uintptr_t*
   }
 
   if (start != 0) {
-    start += KERNEL_MEMORY_OFFSET;
-    end += KERNEL_MEMORY_OFFSET;
+    start += KERNEL_STATIC_MEMORY_OFFSET;
+    end += KERNEL_STATIC_MEMORY_OFFSET;
   }
 
   *ramdiskStart = start;

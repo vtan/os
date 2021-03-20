@@ -157,18 +157,9 @@ _start64:
   shr rax, 16
   mov [gdt - KERNEL_VIRTUAL_OFFSET + GDT_TASK_STATE_SEGMENT + 8], eax
 
-  ; Map 510 GB of physical memory from -512 GB in 1 GB pages
-  xor rcx, rcx
-  .mapPhysicalMemory:
-    mov rax, rcx
-    shl rax, 30
-    or rax, 0x83
-    mov qword [kernelPageTableL3 - KERNEL_VIRTUAL_OFFSET + 8 * rcx], rax
-    inc rcx
-    cmp rcx, 510
-    jne .mapPhysicalMemory
   ; Disable identity page
-  mov qword [kernelPageTableL4 - KERNEL_VIRTUAL_OFFSET], 0
+  mov qword [kernelPageTableL3], 0
+  mov qword [kernelPageTableL4], 0
   ; Flush TLB
   mov rax, cr3
   mov cr3, rax

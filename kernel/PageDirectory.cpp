@@ -6,14 +6,24 @@
 
 #define LOWER_4K_MASK 07777
 #define LOWER_9_BIT_MASK 0777
-#define TABLE_ENTRY_TO_PAGE_BASE(entry) (((uintptr_t) entry & ~LOWER_4K_MASK) + KERNEL_MEMORY_OFFSET)
-#define PAGE_BASE_TO_TABLE_ENTRY(base) ((uintptr_t) base - KERNEL_MEMORY_OFFSET)
+#define TABLE_ENTRY_TO_PAGE_BASE(entry) (((uintptr_t) entry & ~LOWER_4K_MASK) + KERNEL_STATIC_MEMORY_OFFSET)
+#define PAGE_BASE_TO_TABLE_ENTRY(base) ((uintptr_t) base - KERNEL_STATIC_MEMORY_OFFSET)
 
 #define PAGE_PRESENT 1
 #define PAGE_WRITABLE (1 << 1)
 #define PAGE_USER (1 << 2)
+#define PAGE_LARGE 0x80
 
 extern void* kernelPageTableL3;
+
+void mapPhysicalMemoryToKernel() {
+  // TODO: do not map kernel code here (or at least not as writable)
+  uint64_t* const firstEntry = (uint64_t*) &kernelPageTableL3;
+  for (uint64_t i = 0; i < 510; ++i) {
+    *(firstEntry + i) = i << 30 | PAGE_PRESENT | PAGE_WRITABLE | PAGE_LARGE;
+  }
+  PageDirectory_flush();
+}
 
 PageDirectory PageDirectoryManager::create() {
   PageDirectory directory;
@@ -51,7 +61,7 @@ void PageDirectoryManager::addMapping(
     const uintptr_t flags = PAGE_PRESENT | PAGE_WRITABLE | PAGE_USER;
     l1Table[l1Index] = (physicalPageBase & ~LOWER_4K_MASK) | flags;
   } else {
-    const uintptr_t physicalDestination = TABLE_ENTRY_TO_PAGE_BASE(l1Table[l1Index]) + KERNEL_MEMORY_OFFSET;
+    const uintptr_t physicalDestination = TABLE_ENTRY_TO_PAGE_BASE(l1Table[l1Index]) + KERNEL_STATIC_MEMORY_OFFSET;
     klog("Virtual page is already mapped: %x; to %x", virtualPageBase, physicalDestination);
   }
 }

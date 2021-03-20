@@ -35,13 +35,13 @@ void ProcessLoader::load(void* elf, struct Process* process) {
   void* userStackPage = this->pageAllocator.allocate();
   this->pageDirectoryManager.addMapping(
     segment->virtualAddress,
-    (uintptr_t) segmentPage - KERNEL_MEMORY_OFFSET,
+    (uintptr_t) segmentPage - KERNEL_STATIC_MEMORY_OFFSET,
     pageDirectory
   );
   uintptr_t userStackBottom = segment->virtualAddress + PAGE_SIZE;
   this->pageDirectoryManager.addMapping(
     userStackBottom,
-    (uintptr_t) userStackPage - KERNEL_MEMORY_OFFSET,
+    (uintptr_t) userStackPage - KERNEL_STATIC_MEMORY_OFFSET,
     pageDirectory
   );
   pageDirectory.use();
