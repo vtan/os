@@ -54,8 +54,8 @@ void ProcessLoader::load(void* elf, struct Process* process) {
   );
 
   process->entryPoint = header->entryPoint;
-  process->userStackPointer = userStackBottom + PAGE_SIZE - 16; // 16-byte stack alignment
-  process->kernelStackPointer = (uintptr_t) kernelStackPage + PAGE_SIZE - 16;
+  process->userStackPointer = userStackBottom + PAGE_SIZE;
+  process->kernelStackPointer = (uintptr_t) kernelStackPage + PAGE_SIZE;
 }
 
 PRIVATE struct Elf64_SectionHeaderEntry* findTextSection(struct Elf64_Header* header) {
