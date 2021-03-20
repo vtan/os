@@ -31,7 +31,7 @@ void PageDirectoryManager::addMapping(
   const uintptr_t physicalPageBase,
   PageDirectory& directory
 ) {
-  kprintf("Mapping page 0x%x to 0x%x\n", virtualPageBase, physicalPageBase);
+  kprintf("Mapping page %p to %p\n", virtualPageBase, physicalPageBase);
 
   if (virtualPageBase & 0xFFFF800000000000) {
     klog("Invalid virtual page base: %x", virtualPageBase);

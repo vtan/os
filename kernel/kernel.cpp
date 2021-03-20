@@ -52,9 +52,9 @@ void kernel_main(void* multibootInfo)
 
   Process process = { 0 };
   processLoader.load((void*) ramdiskStart, &process);
-  kprintf("Process entry point:          0x%x\n", process.entryPoint);
-  kprintf("Process user stack pointer:   0x%x\n", process.userStackPointer);
-  kprintf("Process kernel stack pointer: 0x%x\n", process.kernelStackPointer);
+  kprintf("Process entry point:          %p\n", process.entryPoint);
+  kprintf("Process user stack pointer:   %p\n", process.userStackPointer);
+  kprintf("Process kernel stack pointer: %p\n", process.kernelStackPointer);
   runningProcess = &process;
   Process_run(&process);
 
@@ -83,7 +83,7 @@ void kernel_irq(InterruptFrame* frame) {
 
 extern "C"
 uint64_t kernel_syscall(SyscallFrame* frame) {
-  kprintf("Entering syscall handler, stack: 0x%x, return rsp: 0x%x, return rip: 0x%x\n", frame, frame->rsp, frame->rip);
+  kprintf("Entering syscall handler, stack: %p, return rsp: %p, return rip: %p\n", frame, frame->rsp, frame->rip);
   switch (frame->syscallNumber) {
     case 0:
       kprintf("Process exited, return value: 0x%x\n", frame->syscallArg);
@@ -117,16 +117,16 @@ static void logMemory() {
   const uint64_t kernelEnd = (uintptr_t) &_kernel_end;
 
   globalTerminal.setColor(VgaText::Color::LIGHT_BROWN, VgaText::Color::BLACK);
-  kprintf("Kernel start: 0x%x\n", kernelStart);
-  kprintf("Kernel end:   0x%x\n", kernelEnd);
+  kprintf("Kernel start: %p\n", kernelStart);
+  kprintf("Kernel end:   %p\n", kernelEnd);
   kprintf("Kernel size:  %d kB\n", (kernelEnd - kernelStart) / 1024);
   globalTerminal.setColor(VgaText::Color::LIGHT_GREY, VgaText::Color::BLACK);
 }
 
 static void logRamdisk(uintptr_t ramdiskStart, uintptr_t ramdiskEnd) {
   globalTerminal.setColor(VgaText::Color::LIGHT_BROWN, VgaText::Color::BLACK);
-  kprintf("Ramdisk start: 0x%x\n", ramdiskStart);
-  kprintf("Ramdisk end:   0x%x\n", ramdiskEnd);
+  kprintf("Ramdisk start: %p\n", ramdiskStart);
+  kprintf("Ramdisk end:   %p\n", ramdiskEnd);
   kprintf("Ramdisk size:  %d B\n", ramdiskEnd - ramdiskStart);
   globalTerminal.setColor(VgaText::Color::LIGHT_GREY, VgaText::Color::BLACK);
 }
