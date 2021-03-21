@@ -1,6 +1,7 @@
 *.d
 *.o
 *.elf
+*.tar
 kernel.bin
 os.iso
 iso/

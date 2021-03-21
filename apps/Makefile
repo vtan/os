@@ -4,12 +4,15 @@ ASFLAGS := -f elf64
 LDFLAGS := -ffreestanding -z max-page-size=0x1000
 LDLIBS := -nostdlib -lgcc
 
-APPS := first.elf
+APPS := a.elf first.elf
 
-all: $(APPS)
+all: apps.tar
+
+apps.tar: $(APPS)
+	tar -c -f $@ $^
 
 %.elf: %.o userlib.o
 	$(CC) -o $@ $(LDFLAGS) $(LDLIBS) $^
 
 clean:
-	rm -rf $(APPS) userlib.s.o
+	rm -rf $(APPS) userlib.s.o apps.tar

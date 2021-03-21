@@ -11,6 +11,8 @@
 
 #define PAGE_SIZE KBYTES(4)
 
+#define ROUND_UP_POW2(x, n) ( ((x) + n - 1)  & (~(n - 1)) )
+
 // The virtual offset of kernel code and statically allocated memory.
 // These addresses are in the -2 GB to 0 space, so they fit in a signed 32-bit pointer
 // and we can compile the kernel with -mcmodel=kernel.

@@ -7,6 +7,7 @@
 #include "Process.hpp"
 #include "SerialDevice.hpp"
 #include "String.hpp"
+#include "TarFilesystem.hpp"
 #include "Terminal.hpp"
 #include "VgaText.hpp"
 
@@ -51,13 +52,16 @@ void kernel_main(void* multibootInfo)
   findRamdisk(multibootInfo, &ramdiskStart, &ramdiskEnd);
   logRamdisk(ramdiskStart, ramdiskEnd);
 
-  Process process = { 0 };
-  processLoader.load((void*) ramdiskStart, &process);
-  kprintf("Process entry point:          %p\n", process.entryPoint);
-  kprintf("Process user stack pointer:   %p\n", process.userStackPointer);
-  kprintf("Process kernel stack pointer: %p\n", process.kernelStackPointer);
-  runningProcess = &process;
-  Process_run(&process);
+  TarFilesystem tarFilesystem((void*) ramdiskStart);
+  tarFilesystem.listFiles();
+
+  // Process process = { 0 };
+  // processLoader.load((void*) ramdiskStart, &process);
+  // kprintf("Process entry point:          %p\n", process.entryPoint);
+  // kprintf("Process user stack pointer:   %p\n", process.userStackPointer);
+  // kprintf("Process kernel stack pointer: %p\n", process.kernelStackPointer);
+  // runningProcess = &process;
+  // Process_run(&process);
 
   while(1) {
     __asm__("hlt");

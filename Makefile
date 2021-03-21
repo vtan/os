@@ -25,7 +25,7 @@ $(ISO): kernel apps grub.cfg
 	mkdir -p iso/boot/grub
 	cp grub.cfg iso/boot/grub/grub.cfg
 	cp $(KERNEL_BIN) iso/boot/kernel.bin
-	cp apps/first.elf iso/boot/initrd
+	cp apps/apps.tar iso/boot/initrd
 	touch iso/boot/initrd
 	grub-mkrescue -o $(ISO) iso 2> /dev/null
 
