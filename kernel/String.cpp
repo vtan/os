@@ -66,6 +66,18 @@ void String_vprintf(char* output, const char* format, va_list args) {
         *output++ = 'x';
         output = String_uformat(va_arg(args, uint64_t), output, 16, 4, '_');
         break;
+      case 's': {
+        const char* p = va_arg(args, const char*);
+        for (;;) {
+          *output = *p;
+          if (*p == 0) {
+            break;
+          }
+          ++output;
+          ++p;
+        }
+        break;
+      }
       default:
         *output++ = *format;
       }
