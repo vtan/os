@@ -9,9 +9,9 @@ struct Process {
   uintptr_t kernelStackPointer;
   uintptr_t entryPoint;
   uintptr_t userStackPointer;
+  PageDirectory pageDirectory;
+  bool runnable;
 };
-
-extern Process* runningProcess;
 
 class ProcessLoader {
   PageAllocator& pageAllocator;
@@ -23,5 +23,3 @@ public:
 
   void load(void* elf, Process*);
 };
-
-extern "C" void Process_run(Process*);

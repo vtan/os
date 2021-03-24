@@ -64,7 +64,7 @@ void String_vprintf(char* output, const char* format, va_list args) {
       case 'p':
         *output++ = '0';
         *output++ = 'x';
-        output = String_uformat(va_arg(args, uint64_t), output, 16, 4, '_');
+        output = String_uformat(va_arg(args, uint64_t), output, 16, 4, '\'');
         break;
       case 's': {
         const char* p = va_arg(args, const char*);

@@ -20,15 +20,15 @@ struct TarMetadataBlock {
   uint64_t deviceMinor;
   char filenamePrefix[155];
 
-  size_t size();
-  TarMetadataBlock* next();
-  void* fileContent();
+  size_t size() const;
+  TarMetadataBlock* next() const;
+  void* fileContent() const;
 } __attribute__((packed));
 
 class TarFilesystem {
-private:
-  TarMetadataBlock* start;
 public:
+  const TarMetadataBlock* start;
+
   explicit TarFilesystem(void* data) : start((TarMetadataBlock*) data) {}
 
   void listFiles();

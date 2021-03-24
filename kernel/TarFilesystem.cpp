@@ -11,11 +11,11 @@ static uint64_t readOctal(const char* str, size_t size) {
   return result;
 }
 
-size_t TarMetadataBlock::size() {
+size_t TarMetadataBlock::size() const {
   return readOctal(sizeOctal, 12);
 }
 
-TarMetadataBlock* TarMetadataBlock::next() {
+TarMetadataBlock* TarMetadataBlock::next() const {
   const size_t sizeWithPadding = ROUND_UP_POW2(size(), 512);
   TarMetadataBlock* candidate = (TarMetadataBlock*) ((uintptr_t) this + 512 + sizeWithPadding);
   if (candidate->magic[0] == 'u') {
@@ -25,13 +25,13 @@ TarMetadataBlock* TarMetadataBlock::next() {
   }
 }
 
-void* TarMetadataBlock::fileContent() {
+void* TarMetadataBlock::fileContent() const {
   return (void*) ((uintptr_t) this + 512);
 }
 
 void TarFilesystem::listFiles() {
   kprintf("Listing tar filesystem\n");
-  for (TarMetadataBlock* block = start; block != nullptr; block = block->next()) {
+  for (const TarMetadataBlock* block = start; block != nullptr; block = block->next()) {
     kprintf("- %s (%d bytes)\n", block->filename, block->size());
   }
 }

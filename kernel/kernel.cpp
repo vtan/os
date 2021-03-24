@@ -5,6 +5,7 @@
 #include "PageDirectory.hpp"
 #include "Pic.hpp"
 #include "Process.hpp"
+#include "ProcessExecutor.hpp"
 #include "SerialDevice.hpp"
 #include "String.hpp"
 #include "TarFilesystem.hpp"
@@ -28,14 +29,13 @@ static SerialDevice* globalSerialDevice = nullptr;
 static VgaText globalVgaText;
 static Terminal globalTerminal(globalVgaText);
 
-Process* runningProcess;
-
 extern "C"
 void kernel_main(void* multibootInfo)
 {
   mapPhysicalMemoryToKernel();
 
   // TODO: assumes this is after the ramdisk ends
+  // TODO: this doesn't work with MBYTES(2)
   PageAllocator pageAllocator((void*) KERNEL_STATIC_MEMORY_OFFSET + MBYTES(1) + KBYTES(512));
   PageDirectoryManager pageDirectoryManager(pageAllocator);
   ProcessLoader processLoader(pageAllocator, pageDirectoryManager);
@@ -55,13 +55,23 @@ void kernel_main(void* multibootInfo)
   TarFilesystem tarFilesystem((void*) ramdiskStart);
   tarFilesystem.listFiles();
 
-  // Process process = { 0 };
-  // processLoader.load((void*) ramdiskStart, &process);
-  // kprintf("Process entry point:          %p\n", process.entryPoint);
-  // kprintf("Process user stack pointer:   %p\n", process.userStackPointer);
-  // kprintf("Process kernel stack pointer: %p\n", process.kernelStackPointer);
-  // runningProcess = &process;
-  // Process_run(&process);
+  {
+    int i = 0;
+    auto file = tarFilesystem.start;
+    while (file != nullptr) {
+      Process* process = ProcessExecutor::allocate();
+      kprintf("Loading process %d\n", i);
+      processLoader.load(file->fileContent(), process);
+      kprintf("Process entry point:          %p\n", process->entryPoint);
+      kprintf("Process user stack pointer:   %p\n", process->userStackPointer);
+      kprintf("Process kernel stack pointer: %p\n", process->kernelStackPointer);
+
+      ++i;
+      file = file->next();
+    }
+  }
+
+  ProcessExecutor::switchToNext();
 
   while(1) {
     __asm__("hlt");
@@ -80,7 +90,7 @@ void kernel_exception(InterruptFrame* frame) {
 
 extern "C"
 void kernel_irq(InterruptFrame* frame) {
-  // kprintf("Entering interrupt handler, stack: 0x%x, return rsp: 0x%x\n", frame, frame->rsp);
+  // kprintf("Entering interrupt handler, stack: %p, return rsp: %p\n", frame, frame->rsp);
   if (frame->interruptNumber == 0x21) {
     globalKeyboardDriver->handleIrq();
   }
@@ -92,6 +102,7 @@ uint64_t kernel_syscall(SyscallFrame* frame) {
   switch (frame->syscallNumber) {
     case 0:
       kprintf("Process exited, return value: 0x%x\n", frame->syscallArg);
+      ProcessExecutor::switchToNext();
       while(1) { __asm__("hlt"); }
     case 0x100:
       kprintf("Process output: 0x%x\n", frame->syscallArg);

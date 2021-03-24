@@ -11,22 +11,13 @@ PRIVATE struct Elf64_SectionHeaderEntry* findTextSection(struct Elf64_Header*);
 void ProcessLoader::load(void* elf, struct Process* process) {
   struct Elf64_Header* header = (Elf64_Header*) elf;
 
-  if (header->programHeaderEntrySize == 0) {
-    klog("No program header in ELF");
-    return;
-  }
+  assert(header->programHeaderEntrySize > 0);
 
   struct Elf64_ProgramHeaderEntry* segment =
     (struct Elf64_ProgramHeaderEntry*)
     ((uint8_t*) header + header->programHeaderOffset);
-  if (segment->alignment != PAGE_SIZE) {
-    klog("Segment is not page-aligned in ELF: %x", segment->alignment);
-    return;
-  }
-  if (segment->memorySize > PAGE_SIZE) {
-    klog("Segment needs more than one page; size: %d", segment->memorySize);
-    return;
-  }
+  assert(segment->alignment == PAGE_SIZE);
+  assert(segment->memorySize <= PAGE_SIZE);
 
   PageDirectory pageDirectory = this->pageDirectoryManager.create();
   void* segmentPage = this->pageAllocator.allocate();
@@ -44,18 +35,22 @@ void ProcessLoader::load(void* elf, struct Process* process) {
     (uintptr_t) userStackPage - KERNEL_STATIC_MEMORY_OFFSET,
     pageDirectory
   );
-  pageDirectory.use();
 
   struct Elf64_SectionHeaderEntry* textSection = findTextSection(header);
+  assert(textSection->virtualAddress >= segment->virtualAddress);
+  assert(textSection->virtualAddress + textSection->size < segment->virtualAddress + PAGE_SIZE);
   memcpy(
-    (uint8_t*) textSection->virtualAddress,
+    (uint8_t*) ((uintptr_t) segmentPage + (textSection->virtualAddress - segment->virtualAddress)),
     (uint8_t*) elf + textSection->offset,
     textSection->size
   );
 
+  // TODO: instead of storing an entry point, push a syscall frame onto the kernel stack of the new process, then run it by returning into it
   process->entryPoint = header->entryPoint;
   process->userStackPointer = userStackBottom + PAGE_SIZE;
   process->kernelStackPointer = (uintptr_t) kernelStackPage + PAGE_SIZE;
+  process->pageDirectory = pageDirectory;
+  process->runnable = true;
 }
 
 PRIVATE struct Elf64_SectionHeaderEntry* findTextSection(struct Elf64_Header* header) {
