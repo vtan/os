@@ -1,10 +1,12 @@
 #pragma once
 
+#include "kernel.hpp"
+
 class PageAllocator {
-  void* nextPage;
+  PhysicalAddress nextPage;
 
 public:
-  PageAllocator(void* memoryBase) : nextPage(memoryBase) {}
+  PageAllocator(PhysicalAddress start) : nextPage(start) {}
 
-  void* allocate();
+  PhysicalAddress allocate();
 };

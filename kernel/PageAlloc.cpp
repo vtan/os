@@ -2,8 +2,8 @@
 
 #include "PageAlloc.hpp"
 
-void* PageAllocator::allocate() {
-  void* page = this->nextPage;
-  this->nextPage += PAGE_SIZE;
+PhysicalAddress PageAllocator::allocate() {
+  PhysicalAddress page = nextPage;
+  nextPage = nextPage + PAGE_SIZE;
   return page;
 }

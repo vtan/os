@@ -2,14 +2,16 @@
 
 #include "kernel.hpp"
 
-extern "C" void PageDirectory_use(uint64_t* physicalL4Table);
+extern "C" void PageDirectory_use(PhysicalAddress);
 extern "C" void PageDirectory_flush();
 void mapPhysicalMemoryToKernel();
 
-struct PageDirectory {
-  uint64_t* l4Table;
+struct PageDirectoryEntry;
 
-  inline void use() const { PageDirectory_use((uint64_t*) ((uintptr_t) this->l4Table - KERNEL_STATIC_MEMORY_OFFSET)); }
+struct PageDirectory {
+  PageDirectoryEntry* l4Table;
+
+  inline void use() const { PageDirectory_use(PhysicalAddress::ofVirtual(l4Table)); }
 };
 
 class PageAllocator;
@@ -21,7 +23,7 @@ public:
   PageDirectoryManager(PageAllocator& pa) : pageAllocator(pa) {}
 
   PageDirectory create();
-  void addMapping(uintptr_t virtualPageBase, uintptr_t physicalPageBase, PageDirectory&);
+  void addMapping(UserAddress, PhysicalAddress, PageDirectory&);
 private:
-  uint64_t* getOrAllocSubtable(uint64_t* table, size_t index);
+  PageDirectoryEntry* getOrAllocSubtable(PageDirectoryEntry* table, size_t index);
 };

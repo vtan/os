@@ -20,19 +20,19 @@ void ProcessLoader::load(void* elf, struct Process* process) {
   assert(segment->memorySize <= PAGE_SIZE);
 
   PageDirectory pageDirectory = this->pageDirectoryManager.create();
-  void* segmentPage = this->pageAllocator.allocate();
+  PhysicalAddress segmentPage = this->pageAllocator.allocate();
   // TODO: doesn't map the kernel stack page, assumes it's in the already mapped superpage
-  void *kernelStackPage = this->pageAllocator.allocate();
-  void* userStackPage = this->pageAllocator.allocate();
+  PhysicalAddress kernelStackPage = this->pageAllocator.allocate();
+  PhysicalAddress userStackPage = this->pageAllocator.allocate();
   this->pageDirectoryManager.addMapping(
     segment->virtualAddress,
-    (uintptr_t) segmentPage - KERNEL_STATIC_MEMORY_OFFSET,
+    segmentPage,
     pageDirectory
   );
-  uintptr_t userStackBottom = segment->virtualAddress + PAGE_SIZE;
+  UserAddress userStackBottom = segment->virtualAddress + PAGE_SIZE;
   this->pageDirectoryManager.addMapping(
     userStackBottom,
-    (uintptr_t) userStackPage - KERNEL_STATIC_MEMORY_OFFSET,
+    userStackPage,
     pageDirectory
   );
 
@@ -40,7 +40,7 @@ void ProcessLoader::load(void* elf, struct Process* process) {
   assert(textSection->virtualAddress >= segment->virtualAddress);
   assert(textSection->virtualAddress + textSection->size < segment->virtualAddress + PAGE_SIZE);
   memcpy(
-    (uint8_t*) ((uintptr_t) segmentPage + (textSection->virtualAddress - segment->virtualAddress)),
+    (segmentPage + (textSection->virtualAddress - segment->virtualAddress)).toVirtual(),
     (uint8_t*) elf + textSection->offset,
     textSection->size
   );
@@ -48,7 +48,7 @@ void ProcessLoader::load(void* elf, struct Process* process) {
   // TODO: instead of storing an entry point, push a syscall frame onto the kernel stack of the new process, then run it by returning into it
   process->entryPoint = header->entryPoint;
   process->userStackPointer = userStackBottom + PAGE_SIZE;
-  process->kernelStackPointer = (uintptr_t) kernelStackPage + PAGE_SIZE;
+  process->kernelStackPointer = (kernelStackPage + PAGE_SIZE).toVirtual();
   process->pageDirectory = pageDirectory;
   process->runnable = true;
 }

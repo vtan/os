@@ -92,9 +92,11 @@ void String_vprintf(char* output, const char* format, va_list args) {
   *output = 0;
 }
 
-void memset(uint8_t* dest, uint8_t byte, size_t count) {
-  for (size_t i = 0; i < count; ++i) {
-    dest[i] = byte;
+void memset(void* dest, int byte, size_t count) {
+  uint8_t* start = (uint8_t*) dest;
+  const uint8_t* end = start + count;
+  for (uint8_t* p = start; p < end; ++p) {
+    *p = byte;
   }
 }
 
@@ -110,7 +112,9 @@ void memmove(uint8_t* dest, const uint8_t* src, size_t count) {
   }
 }
 
-void memcpy(uint8_t* dest, const uint8_t* source, size_t count) {
+void memcpy(void* destRaw, const void* sourceRaw, size_t count) {
+  auto dest = (uint8_t*) destRaw;
+  auto source = (const uint8_t*) sourceRaw;
   const uint8_t* end = source + count;
   while (source < end) {
     *dest++ = *source++;

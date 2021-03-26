@@ -16,7 +16,7 @@ size_t TarMetadataBlock::size() const {
 }
 
 TarMetadataBlock* TarMetadataBlock::next() const {
-  const size_t sizeWithPadding = ROUND_UP_POW2(size(), 512);
+  const size_t sizeWithPadding = roundUpPow2(size(), 512);
   TarMetadataBlock* candidate = (TarMetadataBlock*) ((uintptr_t) this + 512 + sizeWithPadding);
   if (candidate->magic[0] == 'u') {
     return candidate;

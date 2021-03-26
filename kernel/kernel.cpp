@@ -34,9 +34,8 @@ void kernel_main(void* multibootInfo)
 {
   mapPhysicalMemoryToKernel();
 
-  // TODO: assumes this is after the ramdisk ends
-  // TODO: this doesn't work with MBYTES(2)
-  PageAllocator pageAllocator((void*) KERNEL_STATIC_MEMORY_OFFSET + MBYTES(1) + KBYTES(512));
+  // TODO: this assumes the ramdisk ends before 2MB
+  PageAllocator pageAllocator(PhysicalAddress { MBYTES(2) });
   PageDirectoryManager pageDirectoryManager(pageAllocator);
   ProcessLoader processLoader(pageAllocator, pageDirectoryManager);
 

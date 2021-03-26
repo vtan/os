@@ -10,7 +10,7 @@ struct Elf64_Header {
   uint16_t type;
   uint16_t machine;
   uint32_t version;
-  uint64_t entryPoint;
+  UserAddress entryPoint;
   uint64_t programHeaderOffset;
   uint64_t sectionHeaderOffset;
   uint32_t flags;
@@ -20,28 +20,28 @@ struct Elf64_Header {
   uint16_t sectionHeaderEntrySize;
   uint16_t sectionHeaderEntryCount;
   uint16_t sectionNamesEntryIndex;
-} __attribute__((__packed__));
+} PACKED;
 
 struct Elf64_ProgramHeaderEntry {
   uint32_t type;
   uint32_t flags;
   uint64_t offset;
-  uint64_t virtualAddress;
+  UserAddress virtualAddress;
   uint64_t physicalAddress;
   uint64_t fileSize;
   uint64_t memorySize;
   uint64_t alignment;
-} __attribute__((__packed__));
+} PACKED;
 
 struct Elf64_SectionHeaderEntry {
   uint32_t nameOffset;
   uint32_t type;
   uint64_t flags;
-  uint64_t virtualAddress;
+  UserAddress virtualAddress;
   uint64_t offset;
   uint64_t size;
   uint32_t link;
   uint32_t info;
   uint64_t alignment;
   uint64_t entrySize;
-} __attribute__((__packed__));
+} PACKED;

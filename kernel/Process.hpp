@@ -6,9 +6,9 @@
 #include "PageDirectory.hpp"
 
 struct Process {
-  uintptr_t kernelStackPointer;
-  uintptr_t entryPoint;
-  uintptr_t userStackPointer;
+  void* kernelStackPointer;
+  UserAddress entryPoint;
+  UserAddress userStackPointer;
   PageDirectory pageDirectory;
   bool runnable;
 };
