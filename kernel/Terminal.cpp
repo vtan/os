@@ -4,6 +4,10 @@
 Terminal::Terminal(VgaText& vt) : vgaText(vt) {
   this->offset = 0;
   this->attributes = VgaText::colorFrom(VgaText::Color::LIGHT_GREY, VgaText::Color::BLACK);
+}
+
+void Terminal::clear() {
+  this->attributes = VgaText::colorFrom(VgaText::Color::LIGHT_GREY, VgaText::Color::BLACK);
 
   for (size_t i = 0; i < VgaText::WIDTH * VgaText::HEIGHT; ++i) {
     this->vgaText.put(i, this->attributes, ' ');

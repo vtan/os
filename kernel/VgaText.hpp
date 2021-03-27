@@ -3,7 +3,7 @@
 #include "kernel.hpp"
 
 class VgaText {
-  uint16_t* buffer = (uint16_t*) (KERNEL_STATIC_MEMORY_OFFSET + 0xB'8000);
+  uint16_t* buffer = (uint16_t*) PhysicalAddress { 0xB'8000 }.toVirtual();
 
 public:
   enum class Color : uint8_t {

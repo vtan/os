@@ -33,6 +33,7 @@ extern "C"
 void kernel_main(void* multibootInfo)
 {
   mapPhysicalMemoryToKernel();
+  globalTerminal.clear();
 
   // TODO: this assumes the ramdisk ends before 2MB
   PageAllocator pageAllocator(PhysicalAddress { MBYTES(2) });

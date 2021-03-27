@@ -10,6 +10,7 @@ class Terminal {
 public:
   Terminal(VgaText&);
 
+  void clear();
   void print(const char*);
   void setColor(VgaText::Color fg, VgaText::Color bg);
 };
