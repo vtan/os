@@ -107,7 +107,10 @@ uint64_t kernel_syscall(SyscallFrame* frame) {
       ProcessExecutor::switchToNext();
       while(1) { __asm__("hlt"); }
     case 0x100:
-      kprintf("Process output: 0x%x\n", frame->syscallArg);
+      globalTerminal.setColor(VgaText::Color::CYAN, VgaText::Color::BLACK);
+      kprintf("(%d) ", runningProcess->pid);
+      globalTerminal.setColor(VgaText::Color::LIGHT_GREY, VgaText::Color::BLACK);
+      kprintf("0x%x\n", frame->syscallArg);
       return 0;
     default:
       kprintf("panic: Unknown syscall number %d\n", frame->syscallNumber);
@@ -169,12 +172,12 @@ static void findRamdisk(void* multibootInfo, uintptr_t* ramdiskStart, uintptr_t*
   uintptr_t start = 0;
   uintptr_t end = 0;
   for (
-    struct multiboot_tag* tag = (struct multiboot_tag*) (multibootInfo + 8);
+    multiboot_tag* tag = (multiboot_tag*) ((uint8_t*) multibootInfo + 8);
     tag->type != MULTIBOOT_TAG_TYPE_END;
-    tag = (struct multiboot_tag*) ((uint8_t*) tag + ((tag->size + 7) & ~7))
+    tag = (multiboot_tag*) ((uint8_t*) tag + ((tag->size + 7) & ~7))
   ) {
     if (tag-> type == MULTIBOOT_TAG_TYPE_MODULE) {
-      struct multiboot_tag_module* module = (struct multiboot_tag_module*) tag;
+      multiboot_tag_module* module = (multiboot_tag_module*) tag;
       start = module->mod_start;
       end = module->mod_end;
     }

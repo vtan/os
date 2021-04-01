@@ -7,7 +7,7 @@ Process* runningProcess = nullptr;
 
 namespace ProcessExecutor {
 
-Process processes[MAX_PROCESSES] = { {0, 0, 0, {0}, 0} };
+Process processes[MAX_PROCESSES] = { {0, 0, 0, 0, 0, 0} };
 
 static Process* findNextRunnable(Process* process) {
   const Process* end = processes + MAX_PROCESSES;
@@ -21,8 +21,10 @@ static Process* findNextRunnable(Process* process) {
 }
 
 Process* allocate() {
-  for (Process* p = processes; p < processes + MAX_PROCESSES; ++p) {
+  for (int i = 0; i < MAX_PROCESSES; ++i) {
+    Process* p = &processes[i];
     if (!p->runnable) {
+      p->pid = i;
       return p;
     }
   }

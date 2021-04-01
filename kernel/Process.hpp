@@ -10,6 +10,7 @@ struct Process {
   UserAddress entryPoint;
   UserAddress userStackPointer;
   PageDirectory pageDirectory;
+  uint32_t pid;
   bool runnable;
 };
 
