@@ -40,7 +40,9 @@ void kernel_main(void* multibootInfo)
   PageDirectoryManager pageDirectoryManager(pageAllocator);
   ProcessLoader processLoader(pageAllocator, pageDirectoryManager);
 
-  Pic_init(); // TODO do this before enabling interrupts
+  Pic::initialize();
+  VgaText::initializeCursor();
+  enableInterrupts();
   SerialDevice serialDevice;
   globalSerialDevice = &serialDevice;
   Keyboard keyboardDriver(globalTerminal);
@@ -98,7 +100,7 @@ void kernel_irq(InterruptFrame* frame) {
 
 extern "C"
 uint64_t kernel_syscall(SyscallFrame* frame) {
-  kprintf("Entering syscall handler, stack: %p, return rsp: %p, return rip: %p\n", frame, frame->rsp, frame->rip);
+  // kprintf("Entering syscall handler, stack: %p, return rsp: %p, return rip: %p\n", frame, frame->rsp, frame->rip);
   switch (frame->syscallNumber) {
     case 0:
       kprintf("Process exited, return value: 0x%x\n", frame->syscallArg);
@@ -115,17 +117,33 @@ uint64_t kernel_syscall(SyscallFrame* frame) {
 }
 
 void kprintf(const char* format, ...) {
-  static char str[1024]; // Let's hope this is enough.
+  char str[64];
+  const char* const end = str + 64;
+  char* p = str;
+
+  auto flush = [&]() {
+    *p = 0;
+    if (globalSerialDevice) {
+      globalSerialDevice->writeString(str);
+    }
+    globalTerminal.print(str);
+  };
+  auto putChar = [&](char c) {
+    *p++ = c;
+    if (p == end - 1) {
+      flush();
+      p = str;
+    }
+  };
 
   va_list args;
   va_start(args, format);
-  String_vprintf(str, format, args);
+  String::vformat(putChar, format, args);
   va_end(args);
 
-  if (globalSerialDevice) {
-    globalSerialDevice->writeString(str);
+  if (p > str) {
+    flush();
   }
-  globalTerminal.print(str);
 }
 
 static void logMemory() {

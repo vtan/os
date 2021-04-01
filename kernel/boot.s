@@ -200,7 +200,6 @@ _start64:
   mov rdi, KERNEL_VIRTUAL_OFFSET
   add rdi, rbx
 
-  sti
   extern kernel_main
   call kernel_main
   ; TODO do we need this?

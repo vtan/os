@@ -43,7 +43,7 @@ void switchToNext() {
     kprintf("Running process %d\n", process - processes);
     runningProcess = process;
     process->pageDirectory.use();
-    Process_run(process);
+    processRun(process);
   }
 }
 

@@ -33,7 +33,7 @@ void mapPhysicalMemoryToKernel() {
   for (uint64_t i = 0; i < 510; ++i) {
     *(firstEntry + i) = i << 30 | PAGE_PRESENT | PAGE_WRITABLE | PAGE_LARGE;
   }
-  PageDirectory_flush();
+  pageDirectoryFlush();
 }
 
 PageDirectory PageDirectoryManager::create() {

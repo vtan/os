@@ -6,15 +6,15 @@
 #include "Process.hpp"
 #include "String.hpp"
 
-PRIVATE struct Elf64_SectionHeaderEntry* findTextSection(struct Elf64_Header*);
+static struct Elf64::SectionHeaderEntry* findTextSection(struct Elf64::Header*);
 
 void ProcessLoader::load(void* elf, struct Process* process) {
-  struct Elf64_Header* header = (Elf64_Header*) elf;
+  struct Elf64::Header* header = (Elf64::Header*) elf;
 
   assert(header->programHeaderEntrySize > 0);
 
-  struct Elf64_ProgramHeaderEntry* segment =
-    (struct Elf64_ProgramHeaderEntry*)
+  struct Elf64::ProgramHeaderEntry* segment =
+    (struct Elf64::ProgramHeaderEntry*)
     ((uint8_t*) header + header->programHeaderOffset);
   assert(segment->alignment == PAGE_SIZE);
   assert(segment->memorySize <= PAGE_SIZE);
@@ -36,7 +36,7 @@ void ProcessLoader::load(void* elf, struct Process* process) {
     pageDirectory
   );
 
-  struct Elf64_SectionHeaderEntry* textSection = findTextSection(header);
+  struct Elf64::SectionHeaderEntry* textSection = findTextSection(header);
   assert(textSection->virtualAddress >= segment->virtualAddress);
   assert(textSection->virtualAddress + textSection->size < segment->virtualAddress + PAGE_SIZE);
   memcpy(
@@ -53,12 +53,12 @@ void ProcessLoader::load(void* elf, struct Process* process) {
   process->runnable = true;
 }
 
-PRIVATE struct Elf64_SectionHeaderEntry* findTextSection(struct Elf64_Header* header) {
+static struct Elf64::SectionHeaderEntry* findTextSection(struct Elf64::Header* header) {
   for (int i = 0; i < header->sectionHeaderEntryCount; ++i) {
-    struct Elf64_SectionHeaderEntry* section =
-      (struct Elf64_SectionHeaderEntry*)
+    struct Elf64::SectionHeaderEntry* section =
+      (struct Elf64::SectionHeaderEntry*)
       ((uint8_t*) header + header->sectionHeaderOffset + i * header->sectionHeaderEntrySize);
-    if (section->type == Elf64_SECTION_PROGBITS) {
+    if (section->type == Elf64::SECTION_PROGBITS) {
       return section;
     }
   }

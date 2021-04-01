@@ -4,10 +4,9 @@
 #include "Process.hpp"
 
 extern Process* runningProcess;
-extern "C" void Process_run(Process*);
+extern "C" void processRun(Process*);
 
 namespace ProcessExecutor {
-
   Process* allocate();
   void switchToNext();
 }

@@ -2,8 +2,8 @@
 
 #include "kernel.hpp"
 
-extern "C" void PageDirectory_use(PhysicalAddress);
-extern "C" void PageDirectory_flush();
+extern "C" void pageDirectoryUse(PhysicalAddress);
+extern "C" void pageDirectoryFlush();
 void mapPhysicalMemoryToKernel();
 
 struct PageDirectoryEntry;
@@ -11,7 +11,7 @@ struct PageDirectoryEntry;
 struct PageDirectory {
   PageDirectoryEntry* l4Table;
 
-  inline void use() const { PageDirectory_use(PhysicalAddress::ofVirtual(l4Table)); }
+  inline void use() const { pageDirectoryUse(PhysicalAddress::ofVirtual(l4Table)); }
 };
 
 class PageAllocator;

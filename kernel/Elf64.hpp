@@ -1,10 +1,14 @@
+#pragma once
+
 #include "kernel.hpp"
 
-#define Elf64_MAGIC_NUMBER 0x464C457F
+namespace Elf64 {
 
-#define Elf64_SECTION_PROGBITS 1
+constexpr uint32_t MAGIC_NUMBER = 0x464C457F;
 
-struct Elf64_Header {
+constexpr uint8_t SECTION_PROGBITS = 1;
+
+struct Header {
   uint32_t magicNumber;
   uint8_t identification[12];
   uint16_t type;
@@ -22,7 +26,7 @@ struct Elf64_Header {
   uint16_t sectionNamesEntryIndex;
 } PACKED;
 
-struct Elf64_ProgramHeaderEntry {
+struct ProgramHeaderEntry {
   uint32_t type;
   uint32_t flags;
   uint64_t offset;
@@ -33,7 +37,7 @@ struct Elf64_ProgramHeaderEntry {
   uint64_t alignment;
 } PACKED;
 
-struct Elf64_SectionHeaderEntry {
+struct SectionHeaderEntry {
   uint32_t nameOffset;
   uint32_t type;
   uint64_t flags;
@@ -45,3 +49,5 @@ struct Elf64_SectionHeaderEntry {
   uint64_t alignment;
   uint64_t entrySize;
 } PACKED;
+
+}

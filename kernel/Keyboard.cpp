@@ -5,7 +5,7 @@
 #include "Port.hpp"
 #include "Terminal.hpp"
 
-#define Keyboard_PORT 0x60
+constexpr uint8_t PORT = 0x60;
 
 static const char keyChars[128] = {
   0, '\e', '1', '2', '3', '4', '5', '6',
@@ -29,18 +29,18 @@ static const char keyCharsShift[128] = {
   0, ' '
 };
 
-enum Keyboard_Modifier {
-  Keyboard_LEFT_SHIFT = 1,
-  Keyboard_RIGHT_SHIFT = 1 << 1
+enum Modifier {
+  LEFT_SHIFT = 1,
+  RIGHT_SHIFT = 1 << 1
 };
 
 Keyboard::Keyboard(Terminal& t) : terminal(t) {
-  uint8_t picInterruptMask = port_in8(Pic_MASTER_DATA);
-  port_out8(Pic_MASTER_DATA, picInterruptMask & 0xFD);
+  uint8_t picInterruptMask = port_in8(Pic::MASTER_DATA);
+  port_out8(Pic::MASTER_DATA, picInterruptMask & 0xFD);
 }
 
 void Keyboard::handleIrq() {
-  const uint8_t scanCode = port_in8(Keyboard_PORT);
+  const uint8_t scanCode = port_in8(PORT);
 
   if (this->ignoreBytes > 0) {
     --this->ignoreBytes;
@@ -49,16 +49,16 @@ void Keyboard::handleIrq() {
   } else if (scanCode == 0xE1) {
     this->ignoreBytes = 2;
   } else if (scanCode == 0x2A) {
-    this->modifiers |= Keyboard_LEFT_SHIFT;
+    this->modifiers |= LEFT_SHIFT;
   } else if (scanCode == 0x36) {
-    this->modifiers |= Keyboard_RIGHT_SHIFT;
+    this->modifiers |= RIGHT_SHIFT;
   } else if (scanCode == 0xAA) {
-    this->modifiers &= ~Keyboard_LEFT_SHIFT;
+    this->modifiers &= ~LEFT_SHIFT;
   } else if (scanCode == 0xB6) {
-    this->modifiers &= ~Keyboard_RIGHT_SHIFT;
+    this->modifiers &= ~RIGHT_SHIFT;
   } else if (scanCode < 0x80) {
     const char ch =
-      this->modifiers & (Keyboard_LEFT_SHIFT | Keyboard_RIGHT_SHIFT)
+      this->modifiers & (LEFT_SHIFT | RIGHT_SHIFT)
         ? keyCharsShift[scanCode]
         : keyChars[scanCode];
     char str[2];
@@ -67,5 +67,5 @@ void Keyboard::handleIrq() {
     this->terminal.print(str);
   }
 
-  port_out8(Pic_MASTER_COMMAND, Pic_END_OF_INTERRUPT);
+  port_out8(Pic::MASTER_COMMAND, Pic::END_OF_INTERRUPT);
 }

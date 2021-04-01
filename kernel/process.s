@@ -1,7 +1,7 @@
 section .text
 
-global Process_run
-Process_run:
+global processRun
+processRun:
   mov rax, [rdi]
   extern taskStateSegment
   mov [taskStateSegment + 4], rax    ; Putting kernel stack pointer in TSS.RSP0

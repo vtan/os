@@ -4,7 +4,7 @@
 #include "String.hpp"
 #include "VgaText.hpp"
 
-VgaText::VgaText() {
+void VgaText::initializeCursor() {
   const uint8_t cursorStartRegister = 0xA;
   const uint8_t cursorEndRegister = 0xB;
   const uint8_t scanlineStart = 0xA;
@@ -28,8 +28,8 @@ void VgaText::put(size_t offset, uint8_t attributes, uint8_t character) {
 
 void VgaText::scrollUp() {
   memmove(
-    (uint8_t*) this->buffer,
-    (uint8_t*) (this->buffer + VgaText::WIDTH),
+    this->buffer,
+    (this->buffer + VgaText::WIDTH),
     sizeof(uint16_t) * (VgaText::SCREEN_SIZE - VgaText::WIDTH)
   );
 

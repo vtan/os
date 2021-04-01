@@ -29,7 +29,7 @@ public:
   static constexpr int HEIGHT = 25;
   static constexpr int SCREEN_SIZE = WIDTH * HEIGHT;
 
-  VgaText();
+  static void initializeCursor();
 
   void put(size_t offset, uint8_t attributes, uint8_t character);
   void scrollUp();
