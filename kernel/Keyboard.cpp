@@ -35,8 +35,8 @@ enum Modifier {
 };
 
 Keyboard::Keyboard(Terminal& t) : terminal(t) {
-  uint8_t picInterruptMask = port_in8(Pic::MASTER_DATA);
-  port_out8(Pic::MASTER_DATA, picInterruptMask & 0xFD);
+  constexpr uint8_t irqLine = 1;
+  Pic::enableInterrupt(irqLine);
 }
 
 void Keyboard::handleIrq() {
@@ -66,6 +66,4 @@ void Keyboard::handleIrq() {
     str[1] = 0;
     this->terminal.print(str);
   }
-
-  port_out8(Pic::MASTER_COMMAND, Pic::END_OF_INTERRUPT);
 }

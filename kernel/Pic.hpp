@@ -5,6 +5,8 @@
 namespace Pic {
 
 void initialize();
+void enableInterrupt(uint8_t irqLine);
+void acknowledgeInterrupt();
 
 constexpr uint8_t MASTER_COMMAND = 0x20;
 constexpr uint8_t MASTER_DATA = 0x21;

@@ -10,6 +10,7 @@
 #include "String.hpp"
 #include "TarFilesystem.hpp"
 #include "Terminal.hpp"
+#include "Timer.hpp"
 #include "VgaText.hpp"
 
 extern "C" {
@@ -73,6 +74,7 @@ void kernel_main(void* multibootInfo)
     }
   }
 
+  Timer::initialize();
   ProcessExecutor::switchToNext();
 
   while(1) {
@@ -93,9 +95,17 @@ void kernel_exception(InterruptFrame* frame) {
 extern "C"
 void kernel_irq(InterruptFrame* frame) {
   // kprintf("Entering interrupt handler, stack: %p, return rsp: %p\n", frame, frame->rsp);
-  if (frame->interruptNumber == 0x21) {
-    globalKeyboardDriver->handleIrq();
+  switch (frame->interruptNumber) {
+    case 0x20:
+      kprintf("TICK\n");
+      break;
+    case 0x21:
+      globalKeyboardDriver->handleIrq();
+      break;
+    default:
+      kprintf("Unexpect interrupt number: 0x%x\n", frame->interruptNumber);
   }
+  Pic::acknowledgeInterrupt();
 }
 
 extern "C"
