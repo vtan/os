@@ -7,9 +7,8 @@
 
 struct Process {
   void* kernelStackPointer;
-  UserAddress entryPoint;
-  UserAddress userStackPointer;
-  PageDirectory pageDirectory;
+  const InterruptFrame* continuation;
+  PhysicalAddress pageDirectory;
   uint32_t pid;
   bool runnable;
 };

@@ -5,11 +5,6 @@ enableInterrupts:
   sti
   ret
 
-global pageDirectoryUse
-pageDirectoryUse:
-  mov cr3, rdi
-  ret
-
 global pageDirectoryFlush
 pageDirectoryFlush:
   mov rax, cr3

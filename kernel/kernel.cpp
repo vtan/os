@@ -64,8 +64,8 @@ void kernel_main(void* multibootInfo)
       Process* process = ProcessExecutor::allocate();
       kprintf("Loading process %d\n", i);
       processLoader.load(file->fileContent(), process);
-      kprintf("Process entry point:          %p\n", process->entryPoint);
-      kprintf("Process user stack pointer:   %p\n", process->userStackPointer);
+      kprintf("Process entry point:          %p\n", process->continuation->rip);
+      kprintf("Process user stack pointer:   %p\n", process->continuation->rsp);
       kprintf("Process kernel stack pointer: %p\n", process->kernelStackPointer);
 
       ++i;

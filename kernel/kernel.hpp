@@ -27,6 +27,10 @@ constexpr uint64_t KERNEL_STATIC_MEMORY_OFFSET = 0xFFFF'FFFF'8000'0000ul;
 // The virtual offset where all of the physical memory is mapped for the kernel.
 constexpr uint64_t PHYSICAL_MEMORY_OFFSET = 0xFFFF'FF80'0000'0000ul;
 
+// GDT segments or'd with 3 because userland runs in ring 3.
+constexpr uint8_t USER_DATA_SEGMENT = 0x23;
+constexpr uint8_t USER_CODE_SEGMENT = 0x2B;
+
 template<typename T>
 struct BaseAddress {
   uintptr_t address;

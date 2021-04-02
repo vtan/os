@@ -3,11 +3,13 @@
 
 #define MAX_PROCESSES 4
 
+extern "C" void switchToProcess(Process*);
+
 Process* runningProcess = nullptr;
 
 namespace ProcessExecutor {
 
-Process processes[MAX_PROCESSES] = { {0, 0, 0, 0, 0, 0} };
+Process processes[MAX_PROCESSES] = { {0, 0, 0, 0, 0} };
 
 static Process* findNextRunnable(Process* process) {
   const Process* end = processes + MAX_PROCESSES;
@@ -43,9 +45,7 @@ void switchToNext() {
 
   if (process) {
     kprintf("Running process %d\n", process - processes);
-    runningProcess = process;
-    process->pageDirectory.use();
-    processRun(process);
+    switchToProcess(process);
   }
 }
 

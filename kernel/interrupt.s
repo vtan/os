@@ -135,6 +135,8 @@ generic_irq_handler:
   mov rdi, rsp
   cld
   call kernel_irq
+global jumpViaInterruptFrame
+jumpViaInterruptFrame:
   popall
   add rsp, 16
   iretq

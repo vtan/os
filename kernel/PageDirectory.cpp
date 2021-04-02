@@ -50,7 +50,7 @@ PageDirectory PageDirectoryManager::create() {
 void PageDirectoryManager::addMapping(
   const UserAddress virtualAddress,
   const PhysicalAddress physicalAddress,
-  PageDirectory& directory
+  PageDirectory directory
 ) {
   const uintptr_t virtualPageBase = virtualAddress.address;
   kprintf("Mapping virtual page %p to physical %p\n", virtualPageBase, physicalAddress.address);
