@@ -7,5 +7,6 @@ extern "C" Process* runningProcess;
 
 namespace ProcessExecutor {
   Process* allocate();
-  void switchToNext();
+  void scheduleNextProcess(const InterruptFrame*);
+  [[noreturn]] void exitCurrentProcess();
 }

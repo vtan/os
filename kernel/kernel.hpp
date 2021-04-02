@@ -69,7 +69,8 @@ struct SyscallFrame {
 
 void kprintf(const char* format, ...);
 
-extern "C" void kernel_halt();
+extern "C" [[noreturn]] void kernel_halt();
+extern "C" void disableInterrupts();
 extern "C" void enableInterrupts();
 
 #define STRINGIFY_DETAIL(x) #x

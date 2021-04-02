@@ -12,6 +12,6 @@ uint64_t main() {
 }
 
 void wait() {
-  uint32_t x = 0x3FFFFFFF;
+  uint32_t x = 0x8000000;
   while (x-- > 0) {}
 }

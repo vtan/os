@@ -12,9 +12,6 @@ extern jumpViaInterruptFrame
 
 global switchToProcess
 switchToProcess:
-  cli
-  mov [runningProcess], rdi
-
   mov rax, [rdi + Process.kernelStackPointer]
   mov [taskStateSegment + 4], rax    ; Putting kernel stack pointer in TSS.RSP0
 

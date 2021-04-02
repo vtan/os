@@ -31,7 +31,7 @@ static VgaText globalVgaText;
 static Terminal globalTerminal(globalVgaText);
 
 extern "C"
-void kernel_main(void* multibootInfo)
+[[noreturn]] void kernel_main(void* multibootInfo)
 {
   mapPhysicalMemoryToKernel();
   globalTerminal.clear();
@@ -62,23 +62,24 @@ void kernel_main(void* multibootInfo)
     int i = 0;
     auto file = tarFilesystem.start;
     while (file != nullptr) {
-      Process* process = ProcessExecutor::allocate();
-      kprintf("Loading process %d\n", i);
-      processLoader.load(file->fileContent(), process);
-      kprintf("Process entry point:          %p\n", process->continuation->rip);
-      kprintf("Process user stack pointer:   %p\n", process->continuation->rsp);
-      kprintf("Process kernel stack pointer: %p\n", process->kernelStackPointer);
+      for (int j = 0; j < 4; ++j) {
+        Process* process = ProcessExecutor::allocate();
+        kprintf("Loading process %d\n", i);
+        processLoader.load(file->fileContent(), process);
+        kprintf("Process entry point:          %p\n", process->continuation->rip);
+        kprintf("Process user stack pointer:   %p\n", process->continuation->rsp);
+        kprintf("Process kernel stack pointer: %p\n", process->kernelStackPointer);
 
-      ++i;
+        ++i;
+      }
       file = file->next();
     }
   }
 
   Timer::initialize();
-  ProcessExecutor::switchToNext();
 
-  while(1) {
-    __asm__("hlt");
+  while (true) {
+    asm("hlt");
   }
 }
 
@@ -97,7 +98,7 @@ void kernel_irq(InterruptFrame* frame) {
   // kprintf("Entering interrupt handler, stack: %p, return rsp: %p\n", frame, frame->rsp);
   switch (frame->interruptNumber) {
     case 0x20:
-      kprintf("TICK\n");
+      ProcessExecutor::scheduleNextProcess(frame);
       break;
     case 0x21:
       globalKeyboardDriver->handleIrq();
@@ -105,7 +106,6 @@ void kernel_irq(InterruptFrame* frame) {
     default:
       kprintf("Unexpect interrupt number: 0x%x\n", frame->interruptNumber);
   }
-  Pic::acknowledgeInterrupt();
 }
 
 extern "C"
@@ -113,9 +113,9 @@ uint64_t kernel_syscall(SyscallFrame* frame) {
   // kprintf("Entering syscall handler, stack: %p, return rsp: %p, return rip: %p\n", frame, frame->rsp, frame->rip);
   switch (frame->syscallNumber) {
     case 0:
-      kprintf("Process exited, return value: 0x%x\n", frame->syscallArg);
-      ProcessExecutor::switchToNext();
-      while(1) { __asm__("hlt"); }
+      kprintf("Process %d exited, return value: 0x%x\n", runningProcess->pid, frame->syscallArg);
+      ProcessExecutor::exitCurrentProcess();
+      break;
     case 0x100:
       globalTerminal.setColor(VgaText::Color::CYAN, VgaText::Color::BLACK);
       kprintf("(%d) ", runningProcess->pid);

@@ -1,5 +1,10 @@
 section .text
 
+global disableInterrupts
+disableInterrupts:
+  cli
+  ret
+
 global enableInterrupts
 enableInterrupts:
   sti
@@ -9,6 +14,12 @@ global pageDirectoryFlush
 pageDirectoryFlush:
   mov rax, cr3
   mov cr3, rax
+  ret
+
+global atomicSwap
+atomicSwap:
+  xchg sil, [rdi]
+  mov al, sil
   ret
 
 global port_in8

@@ -1,23 +1,37 @@
-#include "ProcessExecutor.hpp"
+#include "kernel.hpp"
+#include "Pic.hpp"
 #include "Process.hpp"
+#include "ProcessExecutor.hpp"
+#include "Spinlock.hpp"
 
-#define MAX_PROCESSES 4
+#define MAX_PROCESSES 16
 
-extern "C" void switchToProcess(Process*);
+extern "C" [[noreturn]] void switchToProcess(Process*);
 
 Process* runningProcess = nullptr;
+Spinlock processSwitchLock;
 
 namespace ProcessExecutor {
 
+[[noreturn]] static void switchToNext();
+
 Process processes[MAX_PROCESSES] = { {0, 0, 0, 0, 0} };
 
-static Process* findNextRunnable(Process* process) {
+static Process* findNextRunnable(Process* ref) {
+  if (ref == nullptr) {
+    ref = processes;
+  }
   const Process* end = processes + MAX_PROCESSES;
-  while (process < end) {
-    if (process->runnable) {
-      return process;
+
+  for (Process* p = ref + 1; p < end; ++p) {
+    if (p->runnable) {
+      return p;
     }
-    ++process;
+  }
+  for (Process* p = processes; p <= ref; ++p) {
+    if (p->runnable) {
+      return p;
+    }
   }
   return nullptr;
 }
@@ -33,19 +47,37 @@ Process* allocate() {
   return nullptr;
 }
 
-void switchToNext() {
-  Process* process = runningProcess;
-  if (process) {
-    process->runnable = false;
-    ++process;
-  } else {
-    process = &processes[0];
+void scheduleNextProcess(const InterruptFrame* continuation) {
+  const bool acquiredLock = processSwitchLock.tryAcquire();
+  Pic::acknowledgeInterrupt();
+  if (acquiredLock) {
+    if (runningProcess != nullptr) {
+      runningProcess->continuation = continuation;
+    }
+    switchToNext();
   }
-  process = findNextRunnable(process);
+}
 
-  if (process) {
-    kprintf("Running process %d\n", process - processes);
-    switchToProcess(process);
+[[noreturn]] void exitCurrentProcess() {
+  runningProcess->runnable = false;
+  if (processSwitchLock.tryAcquire()) {
+    switchToNext();
+  } else {
+    // This process will never get scheduled again, so we're waiting until we get interrupted.
+    while (true) { asm("hlt"); }
+  }
+}
+
+[[noreturn]] static void switchToNext() {
+  Process* nextProcess = findNextRunnable(runningProcess);
+  if (nextProcess) {
+    disableInterrupts();
+    processSwitchLock.release();
+    runningProcess = nextProcess;
+    switchToProcess(nextProcess);
+  } else {
+    kprintf("No more processes to run, halting.\n");
+    kernel_halt();
   }
 }
 

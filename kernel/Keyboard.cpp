@@ -66,4 +66,6 @@ void Keyboard::handleIrq() {
     str[1] = 0;
     this->terminal.print(str);
   }
+
+  Pic::acknowledgeInterrupt();
 }
